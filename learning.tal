@@ -1,0 +1,20 @@
+( i am learning uxntal :) )
+
+|00 @system  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|10 @console [ &vector $2 &read $1 &pad $5 &write $1 &error $1 ]
+|20 @screen  [ &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+
+%EMIT { .console/write DEO2 } ( character -- )
+%NL { #0a EMIT } ( -- )
+
+|0100
+
+#0ce9 .system/r DEO2
+#21c0 .system/g DEO2
+#2ce5 .system/b DEO2
+
+#0008 .screen/x DEO2
+#0008 .screen/y DEO2
+#42   .screen/pixel DEO
+
+#3432 EMIT
