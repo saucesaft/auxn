@@ -7,12 +7,12 @@ const MAX_INSTR: u8 = 0x1f;
 pub struct UXN {
     pub ram: ArrayVec::<u8, 0x13000>,
     
-    wst: usize,
-    rst: usize,
-    dev: usize,
+    pub wst: usize,
+    pub rst: usize,
+    pub dev: usize,
 
     pub src: usize,
-    dst: usize,
+    pub dst: usize,
 
     pub bs: usize,
     pub pk: usize,
@@ -20,6 +20,8 @@ pub struct UXN {
     pub r2: bool,
     pub rr: bool,
     pub rk: bool,
+
+    pub pc: usize,
 }
 
 impl UXN {
@@ -40,6 +42,8 @@ impl UXN {
             r2: false,
             rr: false,
             rk: false,
+
+            pc: 0,
 
         };
 
@@ -94,16 +98,29 @@ impl UXN {
     }
 
     pub fn inc(&mut self) -> usize {
-        self.ram[self.src + 0xff] += 1;
+        let val = self.ram[self.src + 0xff];
 
-        return self.ram[self.src + 0xff].into();
+        self.ram[self.src + 0xff] = self.ram[self.src + 0xff] + 1;
+
+        return val.into();
     }
 
-    pub fn dec(&self) -> usize {
+    pub fn dst_inc(&mut self) -> usize {
+        let val = self.ram[self.dst + 0xff];
+
+        self.ram[self.dst + 0xff] = self.ram[self.dst + 0xff] + 1;
+
+        return val.into();
+    }
+
+    pub fn dec(&mut self) -> usize {
         if self.rk {
-            return self.pk - 1;
+            self.pk = self.pk - 1;
+            return self.pk;
         } else {
-            return (self.ram[self.src + 0xff] - 1).into();
+            self.ram[self.src + 0xff] = self.ram[self.src + 0xff] - 1;
+
+            return (self.ram[self.src + 0xff]).into();
         }
     }
 
@@ -114,7 +131,9 @@ impl UXN {
         return 1;
     }
 
-    pub fn eval(&mut self, mut pc: usize) -> u8 {
+    pub fn eval(&mut self, pc: usize) -> u8 {
+
+        self.pc = pc;
 
         let mut current_block: u64;
 
@@ -129,7 +148,7 @@ impl UXN {
         let mut limit: u64 = 0x40000;
         let mut errcode = 0;
 
-        if pc == 0 || self.dev_get(0xf) != 0 {
+        if self.pc == 0 || self.dev_get(0xf) != 0 {
             return 0;
         }
 
@@ -138,8 +157,8 @@ impl UXN {
         let mut instr: u8 = 0;
 
         loop {
-            instr = self.ram[pc];
-            pc = pc.wrapping_add(1);
+            instr = self.ram[self.pc];
+            self.pc = self.pc.wrapping_add(1);
 
             if instr == 0 {
                 current_block = 13224773276258604431;
@@ -182,28 +201,35 @@ impl UXN {
                 self.pk = self.ptr() as usize;
             }
 
+            print!("PC: {:?} ", self.pc);
             match Opcode::try_from(instr & MAX_INSTR) {
                 Ok(Opcode::LIT) => {
-                    self.PUSH( self.PEEK(pc) );
-                    pc += 1 + self.bs
+                    println!("-> LIT");
+
+                    self.PUSH( self.PEEK(self.pc) );
+                    self.pc += 1 + self.bs
                 }
 
                 Ok(Opcode::INC) => {
+                    println!("-> INC");
                     let x = self.POP();
                     self.PUSH( x + 1 );
                 }
 
                 Ok(Opcode::POP) => {
+                    println!("-> POP");
                     self.POP();
                 }
 
                 Ok(Opcode::NIP) => {
+                    println!("-> NIP");
                     a = self.POP();
                     self.POP();
                     self.PUSH(a);
                 }
 
                 Ok(Opcode::SWP) => {
+                    println!("-> SWP");
                     a = self.POP();
                     b = self.POP();
                     self.PUSH(a);
@@ -211,6 +237,7 @@ impl UXN {
                 }
 
                 Ok(Opcode::ROT) => {
+                    println!("-> ROT");
                     a = self.POP();
                     b = self.POP();
                     c = self.POP();
@@ -220,12 +247,14 @@ impl UXN {
                 }
 
                 Ok(Opcode::DUP) => {
+                    println!("-> DUP");
                     a = self.POP();
                     self.PUSH(a);
                     self.PUSH(a);
                 }
 
                 Ok(Opcode::OVR) => {
+                    println!("-> OVR");
                     a = self.POP();
                     b = self.POP();
                     self.PUSH(b);
@@ -234,6 +263,7 @@ impl UXN {
                 }
 
                 Ok(Opcode::EQU) => {
+                    println!("-> EQU");
                     a = self.POP();
                     b = self.POP();
                     if b == a {
@@ -244,6 +274,7 @@ impl UXN {
                 }
 
                 Ok(Opcode::NEQ) => {
+                    println!("-> NEQ");
                     a = self.POP();
                     b = self.POP();
                     if b != a {
@@ -254,6 +285,7 @@ impl UXN {
                 }
 
                 Ok(Opcode::GTH) => {
+                    println!("-> GTH");
                     a = self.POP();
                     b = self.POP();
                     if b > a {
@@ -264,6 +296,7 @@ impl UXN {
                 }
 
                 Ok(Opcode::LTH) => {
+                    println!("-> LTH");
                     a = self.POP();
                     b = self.POP();
                     if b < a {
@@ -274,95 +307,147 @@ impl UXN {
                 }
 
                 Ok(Opcode::JMP) => {
-                    println!("JMP")
+                    println!("-> JMP");
+                    let x = self.POP().into();
+                    self.pc = self.JUMP( x );
                 }
 
                 Ok(Opcode::JCN) => {
-                    println!("JCN")
+                    println!("-> JCN");
+                    a = self.POP();
+                    if self.POP8() != 0 {
+                        self.pc = self.JUMP(a.into());
+                    }
                 }
 
                 Ok(Opcode::JSR) => {
-                    println!("JSR")
+                    println!("-> JSR");
+                    self.DST_PUSH16(self.pc.try_into().unwrap());
+                    let x = self.POP().into();
+                    self.pc = self.JUMP( x );
                 }
 
                 Ok(Opcode::STH) => {
-                    println!("STH")
+                    println!("-> STH");
+                    if self.r2 {
+                        let x = self.POP16();
+                        self.DST_PUSH16(x);
+                    } else {
+                        let x = self.POP8(); //here
+                        self.DST_PUSH8(x);
+                    }
                 }
 
                 Ok(Opcode::LDZ) => {
-                    println!("LDZ")
+                    println!("-> LDZ");
+                    let x = self.POP8();
+                    self.PUSH( self.PEEK( x.into() ) );
                 }
 
                 Ok(Opcode::STZ) => {
-                    println!("STZ")
+                    println!("-> STZ");
+                    let x = self.POP8();
+                    let y = self.POP();
+
+                    self.POKE(x.into(), y);
                 }
 
                 Ok(Opcode::LDR) => {
-                    println!("LDR")
+                    println!("-> LDR");
+                    let x = self.POP8();
+
+                    self.PUSH( self.PEEK( self.pc + self.rel(x.into()) ) );
                 }
 
                 Ok(Opcode::STR) => {
-                    println!("STR")
+                    println!("-> STR");
+                    let x = self.POP8();
+                    let y = self.POP();
+
+                    self.POKE(self.pc + self.rel(x.into()), y);
                 }
 
                 Ok(Opcode::LDA) => {
-                    println!("LDA")
+                    println!("-> LDA");
+                    let x = self.POP16();
+
+                    self.PUSH( self.PEEK( x.into() ) );
                 }
 
                 Ok(Opcode::STA) => {
-                    println!("STA")
+                    println!("-> STA");
+                    let x = self.POP16();
+                    let y = self.POP();
+
+                    self.POKE(x.into(), y);
                 }
 
                 Ok(Opcode::DEI) => {
-                    println!("DEI")
+                    println!("-> DEI");
+                    let x = self.POP8();
+
+                    self.PUSH( self.DEVR( x.into() ) );
                 }
 
                 Ok(Opcode::DEO) => {
-                    println!("DEO")
+                    println!("-> DEO");
+                    let x = self.POP8();
+                    let y = self.POP();
+
+                    println!("a: {:?}", x);
+                    println!("b: {:?}", y);
+
+                    self.DEVW(x.into(), y);
                 }
 
                 Ok(Opcode::ADD) => {
+                    println!("-> ADD");
                     a = self.POP();
                     b = self.POP();
-                    self.PUSH(b + a);
+                    self.PUSH(b.wrapping_add(a));
                 }
 
                 Ok(Opcode::SUB) => {
+                    println!("-> SUB");
                     a = self.POP();
                     b = self.POP();
-                    self.PUSH(b - a);
+                    self.PUSH(b.wrapping_sub(a));
                 }
 
                 Ok(Opcode::MUL) => {
+                    println!("-> MUL");
                     a = self.POP();
                     b = self.POP();
-                    self.PUSH(b * a);
+                    self.PUSH(b.wrapping_mul(a));
                 }
 
                 Ok(Opcode::DIV) => {
-                    println!("DIV")
+                    println!("-> DIV");
                 }
 
                 Ok(Opcode::AND) => {
+                    println!("-> AND");
                     a = self.POP();
                     b = self.POP();
                     self.PUSH(b & a);
                 }
 
                 Ok(Opcode::ORA) => {
+                    println!("-> ORA");
                     a = self.POP();
                     b = self.POP();
                     self.PUSH(b | a);
                 }
 
                 Ok(Opcode::EOR) => {
+                    println!("-> EOR");
                     a = self.POP();
                     b = self.POP();
                     self.PUSH(b ^ a);
                 }
 
                 Ok(Opcode::SFT) => {
-                    println!("SFT")
+                    println!("-> SFT");
                 }
 
                 Err(_) => {
