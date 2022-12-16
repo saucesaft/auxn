@@ -1,4 +1,4 @@
-pub  enum Opcode {
+pub enum Opcode {
     // Stack
     LIT = 0x00,
     INC = 0x01,
