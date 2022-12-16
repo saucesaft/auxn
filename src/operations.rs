@@ -23,24 +23,24 @@ impl UXN {
         }		
 	}
 
-	pub fn POP16(&mut self, s: u8) {
-		self.POP8(((s) as i32 >> 0x08) as u8);
-		self.POP8(s & 0xff);
+	pub fn POP16(&mut self) -> u8 {
+		return self.POP8() + ((self.POP8() as i32) << 8) as u8;
 	}
 
-	pub fn POP8(&mut self, s: u8) {
-		if self.ptr() == 0xff {
-			panic!("OVERFLOW");
+	pub fn POP8(&mut self) -> u8 {
+		if self.ptr() == 0x00 {
+			panic!("UNDERFLOW");
 		}
-		let index = self.inc();
-		self.ram[self.src + index] = s;
+
+		let index = self.dec();
+		return self.ram[self.src + index];
 	}
 
-	pub fn POP(&mut self, s: u8) {
+	pub fn POP(&mut self) -> u8 {
 		if self.bs != 0 {
-            self.POP16(s);
+            self.POP16()
         } else {
-            self.POP8(s);
+            self.POP8()
         }		
 	}
 

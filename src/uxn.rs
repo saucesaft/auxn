@@ -15,6 +15,11 @@ pub struct UXN {
     dst: usize,
 
     pub bs: usize,
+    pub pk: usize,
+
+    pub r2: bool,
+    pub rr: bool,
+    pub rk: bool,
 }
 
 impl UXN {
@@ -30,6 +35,12 @@ impl UXN {
             dst: 0,
 
             bs: 0,
+            pk: 0,
+
+            r2: false,
+            rr: false,
+            rk: false,
+
         };
 
         let (system_indev, system_outdev) = crate::system::system_devices();
@@ -88,6 +99,14 @@ impl UXN {
         return self.ram[self.src + 0xff].into();
     }
 
+    pub fn dec(&self) -> usize {
+        if self.rk {
+            return self.pk - 1;
+        } else {
+            return (self.ram[self.src + 0xff] - 1).into();
+        }
+    }
+
     fn port(&self, id: u8, indev: &Device, outdev: &Device) {}
 
     // move to external?
@@ -103,8 +122,6 @@ impl UXN {
         let mut a: u8 = 0;
         let mut b: u8 = 0;
         let mut c: u8 = 0;
-        let mut j: u8 = 0;
-        let mut k: u8 = 0;
 
         let mut kptr: u8 = 0;
         let sp:  u8 = 0;
@@ -140,15 +157,19 @@ impl UXN {
                 }
             }
 
+            self.r2 = instr & 0x20 != 0;
+            self.rr = instr & 0x40 != 0;
+            self.rk = instr & 0x80 != 0;
+
             // short-mode ?
-            if instr & 0x20 != 0 {
+            if self.r2 {
                 self.bs = 1;
             } else {
                 self.bs = 0;
             }
 
             // return-mode ?
-            if instr & 0x40 != 0 {
+            if self.rr {
                 self.src = self.rst;
                 self.dst = self.wst;
             } else {
@@ -157,8 +178,8 @@ impl UXN {
             }
 
             // keep-mode ?
-            if instr & 0x80 != 0 {
-                kptr = 
+            if self.rk {
+                self.pk = self.ptr() as usize;
             }
 
             match Opcode::try_from(instr & MAX_INSTR) {
@@ -168,47 +189,88 @@ impl UXN {
                 }
 
                 Ok(Opcode::INC) => {
-                    self.PUSH( self.POP() + 1 );
+                    let x = self.POP();
+                    self.PUSH( x + 1 );
                 }
 
                 Ok(Opcode::POP) => {
-                    println!("POP")
+                    self.POP();
                 }
 
                 Ok(Opcode::NIP) => {
-                    println!("NIP")
+                    a = self.POP();
+                    self.POP();
+                    self.PUSH(a);
                 }
 
                 Ok(Opcode::SWP) => {
-                    println!("SWP")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(a);
+                    self.PUSH(b);
                 }
 
                 Ok(Opcode::ROT) => {
-                    println!("ROT")
+                    a = self.POP();
+                    b = self.POP();
+                    c = self.POP();
+                    self.PUSH(a);
+                    self.PUSH(b);
+                    self.PUSH(c);
                 }
 
                 Ok(Opcode::DUP) => {
-                    println!("DUP")
+                    a = self.POP();
+                    self.PUSH(a);
+                    self.PUSH(a);
                 }
 
                 Ok(Opcode::OVR) => {
-                    println!("OVR")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(b);
+                    self.PUSH(a);
+                    self.PUSH(b);    
                 }
 
                 Ok(Opcode::EQU) => {
-                    println!("EQU")
+                    a = self.POP();
+                    b = self.POP();
+                    if b == a {
+                        self.PUSH8(1);
+                    } else {
+                        self.PUSH8(0);
+                    }
                 }
 
                 Ok(Opcode::NEQ) => {
-                    println!("NEQ")
+                    a = self.POP();
+                    b = self.POP();
+                    if b != a {
+                        self.PUSH8(1);
+                    } else {
+                        self.PUSH8(0);
+                    }
                 }
 
                 Ok(Opcode::GTH) => {
-                    println!("GTH")
+                    a = self.POP();
+                    b = self.POP();
+                    if b > a {
+                        self.PUSH8(1);
+                    } else {
+                        self.PUSH8(0);
+                    }
                 }
 
                 Ok(Opcode::LTH) => {
-                    println!("LTH")
+                    a = self.POP();
+                    b = self.POP();
+                    if b < a {
+                        self.PUSH8(1);
+                    } else {
+                        self.PUSH8(0);
+                    }
                 }
 
                 Ok(Opcode::JMP) => {
@@ -260,15 +322,21 @@ impl UXN {
                 }
 
                 Ok(Opcode::ADD) => {
-                    println!("ADD")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(b + a);
                 }
 
                 Ok(Opcode::SUB) => {
-                    println!("SUB")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(b - a);
                 }
 
                 Ok(Opcode::MUL) => {
-                    println!("MUL")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(b * a);
                 }
 
                 Ok(Opcode::DIV) => {
@@ -276,15 +344,21 @@ impl UXN {
                 }
 
                 Ok(Opcode::AND) => {
-                    println!("AND")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(b & a);
                 }
 
                 Ok(Opcode::ORA) => {
-                    println!("ORA")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(b | a);
                 }
 
                 Ok(Opcode::EOR) => {
-                    println!("EOR")
+                    a = self.POP();
+                    b = self.POP();
+                    self.PUSH(b ^ a);
                 }
 
                 Ok(Opcode::SFT) => {
