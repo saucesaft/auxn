@@ -35,11 +35,18 @@ impl UXN {
 			}
 
 			0x18 => {
-				println!("0x18 - {}", val);
+				if val == 0x0a{
+					println!();
+				} else {
+					match char::from_u32(val.into()) {
+						Some(c) => print!("{}", c),
+						None => {},
+					}
+				}
 			}
 
 			0x0f => {
-				println!("Prgram Ended");
+				// println!("\nProgram Ended");
 			}
 
 			_ => {
@@ -59,9 +66,9 @@ impl UXN {
 	pub fn DEVW(&mut self, port: usize, val: u8) {
 		if self.r2 {
 			self.DEO(port, val.wrapping_shr(8));
-			self.DEO(port + 1, val & 0xff);
+			self.DEO((port + 1) & 0xff, val & 0xff);
 		} else {
-			self.DEO(port, val);
+			self.DEO(port, val & 0xff);
 		}
 	}
 
@@ -100,8 +107,17 @@ impl UXN {
 	}
 
 	pub fn PUSH16(&mut self, s: u8) {
-		self.PUSH8(s.wrapping_shr(0x08));
-		self.PUSH8(s & 0xff);
+		let k = s as i32 ^ 0xff00;
+
+		let a = (k as i32) >> 0x08;
+		let b = k & 0xff;;
+
+		println!("k: {:?}",k);
+		println!("a: {:?}", a);
+		println!("b: {:?}", b);
+
+		self.PUSH8(a as u8);
+		self.PUSH8(b as u8);
 	}
 
 	pub fn PUSH8(&mut self, s: u8) {
@@ -121,11 +137,13 @@ impl UXN {
 	}
 
 	pub fn POP16(&mut self) -> u8 {
-		return self.POP8().wrapping_add(self.POP8().wrapping_shl(8));
+		let a = self.POP8() as i32;
+		let b = (self.POP8() as i32) << 8;
+
+		return (a + b) as u8
 	}
 
 	pub fn POP8(&mut self) -> u8 {
-		println!("POP: {:?}", self.ptr());
 
 		if self.ptr() == 0x00 {
 			panic!("UNDERFLOW");
@@ -137,21 +155,26 @@ impl UXN {
 
 	pub fn POP(&mut self) -> u8 {
 		if self.bs != 0 {
-            self.POP16()
+            return self.POP16()
         } else {
-            self.POP8()
+            return self.POP8()
         }		
 	}
 
 	pub fn PEEK16(&self, x: usize) -> u8 {
-		return self.ram[x].wrapping_shl(8).wrapping_add(self.ram[x + 1])
+		let a = (self.ram[x] as i32) << 8;
+		let b = (self.ram[x+1] as i32);
+
+		return (a + b) as u8
 	}
 
 	pub fn PEEK(&self, x: usize) -> u8 {
+		// println!("inside x: {:?}", x);
+
 		if self.bs != 0 {
-            self.PEEK16(x)
+            return self.PEEK16(x)
         } else {
-            self.ram[x]
+            return self.ram[x]
         }
 	}
 }

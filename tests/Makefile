@@ -1,6 +1,6 @@
-custom_uxnemu = ../target/debug/uxncli
-uxnemu = ../bin/uxncli
-uxnasm = ../bin/uxnasm
+custom_uxnemu = ../target/debug/uxnrs
+uxnemu = ../../uxn/bin/uxncli
+uxnasm = ../../uxn/bin/uxnasm
 
 all: literals arithmetic stack jumps memory
 
