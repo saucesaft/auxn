@@ -35,14 +35,19 @@ impl UXN {
 			}
 
 			0x18 => {
-				if val == 0x0a{
-					println!();
-				} else {
-					match char::from_u32(val.into()) {
-						Some(c) => print!("{}", c),
-						None => {},
-					}
-				}
+				// if val == 0x0a{
+				// 	println!();
+				// } else {
+
+					// match char::from_u32(val.into()) {
+					// 	Some(c) => print!("{}", c),
+					// 	None => {},
+					// }
+
+					print!("{:#04x} ", val);
+					self.N = self.N + 1;
+
+				// }
 			}
 
 			0x0f => {
@@ -63,12 +68,12 @@ impl UXN {
 		}
 	}
 
-	pub fn DEVW(&mut self, port: usize, val: u8) {
+	pub fn DEVW(&mut self, port: usize, val: u16) {
 		if self.r2 {
-			self.DEO(port, val.wrapping_shr(8));
-			self.DEO((port + 1) & 0xff, val & 0xff);
+			self.DEO(port, ((val as i32) >> 8) as u8);
+			self.DEO((port + 1) & 0xff, (val & 0xff) as u8);
 		} else {
-			self.DEO(port, val & 0xff);
+			self.DEO(port, (val & 0xff) as u8);
 		}
 	}
 
@@ -76,12 +81,12 @@ impl UXN {
 		self.ram[addr] = val;
 	}
 
-	pub fn POKE(&mut self, addr: usize, val: u8) {
+	pub fn POKE(&mut self, addr: usize, val: u16) {
 		if self.r2 {
-			self.ram[addr] = val.wrapping_shr(8);
-			self.ram[addr + 1] = val;
+			self.ram[addr] = val.wrapping_shr(8).try_into().unwrap();
+			self.ram[addr + 1] = val.try_into().unwrap();
 		} else {
-			self.POKE8(addr, val);
+			self.POKE8(addr, val.try_into().unwrap());
 		}
 	}
 
@@ -93,28 +98,23 @@ impl UXN {
 		}
 	}
 
-	pub fn DST_PUSH16(&mut self, s: u8) {
-		self.DST_PUSH8(s.wrapping_shr(0x08));
-		self.DST_PUSH8(s & 0xff);
+	pub fn DST_PUSH16(&mut self, s: u16) {
+		self.DST_PUSH8(s.wrapping_shr(0x08).try_into().unwrap());
+		self.DST_PUSH8((s & 0xff).try_into().unwrap());
 	}
 
 	pub fn DST_PUSH8(&mut self, s: u8) {
-		if self.ptr() == 0xff {
+		if self.dst_ptr() == 0xff { // major error here, point to ptr of DST instead
 			panic!("OVERFLOW");
 		}
 		let index = self.dst_inc();
 		self.ram[self.dst + index] = s;
 	}
 
-	pub fn PUSH16(&mut self, s: u8) {
-		let k = s as i32 ^ 0xff00;
+	pub fn PUSH16(&mut self, s: u16) {
 
-		let a = (k as i32) >> 0x08;
-		let b = k & 0xff;;
-
-		println!("k: {:?}",k);
-		println!("a: {:?}", a);
-		println!("b: {:?}", b);
+		let a = (s as i32) >> 0x08;
+		let b = s & 0xff;;
 
 		self.PUSH8(a as u8);
 		self.PUSH8(b as u8);
@@ -128,19 +128,19 @@ impl UXN {
 		self.ram[self.src + index] = s;
 	}
 
-	pub fn PUSH(&mut self, s: u8) {
+	pub fn PUSH(&mut self, s: u16) {
 		if self.bs != 0 {
             self.PUSH16(s);
         } else {
-            self.PUSH8(s);
+            self.PUSH8(s as u8);
         }		
 	}
 
-	pub fn POP16(&mut self) -> u8 {
+	pub fn POP16(&mut self) -> u16 {
 		let a = self.POP8() as i32;
 		let b = (self.POP8() as i32) << 8;
 
-		return (a + b) as u8
+		return (a + b) as u16
 	}
 
 	pub fn POP8(&mut self) -> u8 {
@@ -153,28 +153,29 @@ impl UXN {
 		return self.ram[self.src + index];
 	}
 
-	pub fn POP(&mut self) -> u8 {
+	pub fn POP(&mut self) -> u16 {
 		if self.bs != 0 {
             return self.POP16()
         } else {
-            return self.POP8()
+            return self.POP8() as u16
         }		
 	}
 
-	pub fn PEEK16(&self, x: usize) -> u8 {
+	pub fn PEEK16(&self, x: usize) -> u16 {
 		let a = (self.ram[x] as i32) << 8;
 		let b = (self.ram[x+1] as i32);
 
-		return (a + b) as u8
+		return (a + b) as u16
 	}
 
-	pub fn PEEK(&self, x: usize) -> u8 {
+	pub fn PEEK(&self, x: usize) -> u16 {
 		// println!("inside x: {:?}", x);
 
 		if self.bs != 0 {
+			// println!("{:?}", self.PEEK16(x));
             return self.PEEK16(x)
         } else {
-            return self.ram[x]
+            return self.ram[x] as u16
         }
 	}
 }

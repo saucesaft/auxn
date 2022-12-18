@@ -22,6 +22,8 @@ pub struct UXN {
     pub rk: bool,
 
     pub pc: usize,
+
+    pub N: i32,
 }
 
 impl UXN {
@@ -44,6 +46,8 @@ impl UXN {
             rk: false,
 
             pc: 0,
+
+            N: 1,
 
         };
 
@@ -91,6 +95,10 @@ impl UXN {
 
     pub fn get(&self, index: usize) -> u8 {
         return self.ram[self.src + index];
+    }
+
+    pub fn dst_get(&self, index: usize) -> u8 {
+        return self.ram[self.dst + index];
     } 
 
     pub fn ptr(&self) -> u8 {
@@ -111,6 +119,10 @@ impl UXN {
         self.ram[self.dst + 0xff] = self.ram[self.dst + 0xff] + 1;
 
         return val.into();
+    }
+
+    pub fn dst_ptr(&self) -> u8 {
+        return self.dst_get(0xff);
     }
 
     pub fn dec(&mut self) -> usize {
@@ -138,9 +150,9 @@ impl UXN {
         let mut current_block: u64;
 
         // registers
-        let mut a: u8 = 0;
-        let mut b: u8 = 0;
-        let mut c: u8 = 0;
+        let mut a: u16 = 0;
+        let mut b: u16 = 0;
+        let mut c: u16 = 0;
 
         let mut kptr: u8 = 0;
         let sp:  u8 = 0;
@@ -203,7 +215,7 @@ impl UXN {
                 self.pk = self.ptr() as usize;
             }
 
-            let mut debug_out: u8 = 0;
+            let mut debug_out: u16 = 0;
 
             // print!("PC: {:?} ", self.pc);
             match Opcode::try_from(instr & MAX_INSTR) {
@@ -224,7 +236,7 @@ impl UXN {
                     }
                     
                     let x = self.POP();
-                    self.PUSH( x + 1 );
+                    self.PUSH( (x + 1).into() );
                 }
 
                 Ok(Opcode::POP) => {
@@ -242,7 +254,7 @@ impl UXN {
                     
                     a = self.POP();
                     self.POP();
-                    self.PUSH(a);
+                    self.PUSH(a.into());
                 }
 
                 Ok(Opcode::SWP) => {
@@ -460,7 +472,7 @@ impl UXN {
                     
                     let x = self.POP8();
 
-                    self.PUSH( self.DEVR( x.into() ) );
+                    self.PUSH( self.DEVR( x.into() ).into() );
                 }
 
                 Ok(Opcode::DEO) => {
@@ -545,6 +557,17 @@ impl UXN {
                     if debug {
                         println!("-> SFT");    
                     }
+
+                    a = self.POP8().into();
+                    b = self.POP();
+
+                    // let x = b >> (a & 0x0f) << ((a & 0xf0) >> 4);
+
+                    // println!("a: {:?}", a);
+                    // println!("b: {:?}", b);
+                    // println!("c: {:?}", x);
+
+                    self.PUSH( b >> (a & 0x0f) << ((a & 0xf0) >> 4) );
                     
                 }
 
@@ -553,18 +576,21 @@ impl UXN {
                 }
             }
 
-            let wst = &self.ram[self.wst..self.wst+10];
-            let rst = &self.ram[self.rst..self.rst+10];
+            // let wst = &self.ram[self.wst..self.wst+20];
+            // let rst = &self.ram[self.rst..self.rst+20];
 
-            println!("pc: {:#x?} instr: {:#x?}", self.pc, instr & MAX_INSTR);
-            println!("rr: {:?} r2: {:?}", self.rr, self.r2);
-            println!("wst: {:x?}", wst);
-            println!("rst: {:x?}", rst);
-            println!("debug_out: {}\n", debug_out);
+            // println!("pc: {:#x?} instr: {:#x?}", self.pc, instr & MAX_INSTR);
+            // println!("rr: {:?} r2: {:?}", self.rr, self.r2);
+            // println!("wst: {:x?}", wst);
+            // println!("rst: {:x?}", rst);
+            // println!("debug_out: {}\n", debug_out as u8);
 
-            if self.pc >= 0x12b {
-                break
-            }
+
+            // // 0x4c4 total
+
+            // if self.pc >= 0x3e8 {
+            //     break
+            // }
 
         }
 
