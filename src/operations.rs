@@ -104,7 +104,7 @@ impl UXN {
 	}
 
 	pub fn DST_PUSH8(&mut self, s: u8) {
-		if self.dst_ptr() == 0xff { // major error here, point to ptr of DST instead
+		if self.dst_ptr() == 0xff {
 			panic!("OVERFLOW");
 		}
 		let index = self.dst_inc();

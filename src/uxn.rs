@@ -520,6 +520,15 @@ impl UXN {
                     if debug {
                         println!("-> DIV");    
                     }
+
+                    a = self.POP();
+                    b = self.POP();
+
+                    if a == 0 {
+                        panic!("IMPOSIBLE DIVISION");
+                    }
+
+                    self.PUSH(b.wrapping_div(a));
                     
                 }
 
