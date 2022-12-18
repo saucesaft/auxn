@@ -276,8 +276,8 @@ impl UXN {
                     a = self.POP();
                     b = self.POP();
                     c = self.POP();
-                    self.PUSH(a);
                     self.PUSH(b);
+                    self.PUSH(a);
                     self.PUSH(c);
                 }
 
@@ -585,10 +585,9 @@ impl UXN {
             // println!("rst: {:x?}", rst);
             // println!("debug_out: {}\n", debug_out as u8);
 
+            // // // 0x23e final pc
 
-            // // 0x4c4 total
-
-            // if self.pc >= 0x3e8 {
+            // if self.pc >= 0x1e0 {
             //     break
             // }
 

@@ -9,4 +9,4 @@ uxn virtual machine running inside of a audio plugin
 - [x] literals.rom
 - [x] jumps.rom
 - [x] memory.rom
-- [] stack.rom
+- [x] stack.rom
