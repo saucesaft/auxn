@@ -44,7 +44,7 @@ impl UXN {
 					// 	None => {},
 					// }
 
-					print!("{:#04x} ", val);
+					print!("{:02x} ", val);
 					self.N = self.N + 1;
 
 				// }
@@ -83,10 +83,10 @@ impl UXN {
 
 	pub fn POKE(&mut self, addr: usize, val: u16) {
 		if self.r2 {
-			self.ram[addr] = val.wrapping_shr(8).try_into().unwrap();
-			self.ram[addr + 1] = val.try_into().unwrap();
+			self.ram[addr] = val.wrapping_shr(8) as u8;
+			self.ram[addr + 1] = val as u8;
 		} else {
-			self.POKE8(addr, val.try_into().unwrap());
+			self.POKE8(addr, val as u8);
 		}
 	}
 
@@ -99,8 +99,8 @@ impl UXN {
 	}
 
 	pub fn DST_PUSH16(&mut self, s: u16) {
-		self.DST_PUSH8(s.wrapping_shr(0x08).try_into().unwrap());
-		self.DST_PUSH8((s & 0xff).try_into().unwrap());
+		self.DST_PUSH8(s.wrapping_shr(0x08) as u8);
+		self.DST_PUSH8((s & 0xff) as u8);
 	}
 
 	pub fn DST_PUSH8(&mut self, s: u8) {
