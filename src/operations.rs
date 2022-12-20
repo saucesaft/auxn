@@ -17,46 +17,16 @@ impl UXN {
 	pub fn DEO(&mut self, port: usize, val: u8) {
 		self.ram[self.dev + port] = val;
 
-		match port {
-			0x10 | 0x11 => {
-				println!("Set Console Vector");
-			}
+		// println!("{:?}", port & 0xF0);
 
-			0x00 | 0x01 => {
-				println!("Set System Vector");
-			}
+		match port & 0xF0 {
+			0x00 => crate::system::system_dev(self, port, val),
 
-			0x02 => {
-				if val != 0 {
-					self.wst = (val as usize) * 0x100;
-				} else {
-					self.wst = 0x10000;
-				}
-			}
+			0x10 => crate::system::console_dev(self, port, val),
 
-			0x18 => {
-				// if val == 0x0a{
-				// 	println!();
-				// } else {
+			0x20 => crate::system::screen_dev(self, port, val),
 
-					// match char::from_u32(val.into()) {
-					// 	Some(c) => print!("{}", c),
-					// 	None => {},
-					// }
-
-					print!("{:02x} ", val);
-					self.N = self.N + 1;
-
-				// }
-			}
-
-			0x0f => {
-				// println!("\nProgram Ended");
-			}
-
-			_ => {
-				println!("Unknown DEO - {}", port);
-			}
+			_ => println!("Unknown DEO PORT: {}", port & 0xF0),
 		}
 	}
 

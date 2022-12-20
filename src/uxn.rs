@@ -23,12 +23,14 @@ pub struct UXN {
 
     pub pc: usize,
 
-    pub N: i32,
+    pub a: u16,
+    pub b: u16,
+    pub c: u16,
 }
 
 impl UXN {
     pub fn new() -> Self {
-        let u = UXN {
+        UXN {
             ram: ArrayVec::<u8, 0x13000>::from([0; 0x13000]),
             
             wst: 0x10000,
@@ -47,32 +49,11 @@ impl UXN {
 
             pc: 0,
 
-            N: 1,
-
-        };
-
-        let (system_indev, system_outdev) = crate::system::system_devices();
-        let (none_indev, none_outdev) = crate::system::none_devices();
-        let (file_indev, file_outdev) = crate::system::file_devices();
-
-        // assign ports to each device
-        u.port(0x0, &system_indev, &system_outdev);
-        u.port(0x1, &none_indev, &none_outdev);
-        u.port(0x2, &none_indev, &none_outdev);
-        u.port(0x3, &none_indev, &none_outdev);
-        u.port(0x4, &none_indev, &none_outdev);
-        u.port(0x5, &none_indev, &none_outdev);
-        u.port(0x6, &none_indev, &none_outdev);
-        u.port(0x7, &none_indev, &none_outdev);
-        u.port(0x8, &none_indev, &none_outdev);
-        u.port(0x9, &none_indev, &none_outdev);
-        u.port(0xa, &file_indev, &file_outdev);
-        u.port(0xb, &file_indev, &file_outdev);
-        u.port(0xc, &none_indev, &none_outdev);
-        u.port(0xd, &none_indev, &none_outdev);
-        u.port(0xf, &none_indev, &none_outdev);
-
-        return u;
+            // registers
+            a: 0,
+            b: 0,
+            c: 0,
+        }
     }
 
     pub fn load(&mut self, program: Vec<u8>) {
@@ -150,9 +131,9 @@ impl UXN {
         let mut current_block: u64;
 
         // registers
-        let mut a: u16 = 0;
-        let mut b: u16 = 0;
-        let mut c: u16 = 0;
+        // let mut a: u16 = 0;
+        // let mut b: u16 = 0;
+        // let mut c: u16 = 0;
 
         let mut kptr: u8 = 0;
         let sp:  u8 = 0;
@@ -569,12 +550,6 @@ impl UXN {
 
                     a = self.POP8().into();
                     b = self.POP();
-
-                    // let x = b >> (a & 0x0f) << ((a & 0xf0) >> 4);
-
-                    // println!("a: {:?}", a);
-                    // println!("b: {:?}", b);
-                    // println!("c: {:?}", x);
 
                     self.PUSH( b >> (a & 0x0f) << ((a & 0xf0) >> 4) );
                     
