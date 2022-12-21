@@ -84,7 +84,7 @@ impl UXN {
 	pub fn PUSH16(&mut self, s: u16) {
 
 		let a = (s as i32) >> 0x08;
-		let b = s & 0xff;;
+		let b = s & 0xff;
 
 		self.PUSH8(a as u8);
 		self.PUSH8(b as u8);
