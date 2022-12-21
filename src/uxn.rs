@@ -137,7 +137,7 @@ impl UXN {
             return;
         }
 
-        while self.halted != true {
+        while !self.halted {
             self.step()
         }
 

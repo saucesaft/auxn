@@ -1,3 +1,5 @@
+use crate::uxn::UXN;
+
 mod stack;
 pub use stack::*;
 
@@ -7,7 +9,7 @@ pub use device::*;
 mod opcodes;
 pub use opcodes::*;
 
-pub fn screen_dev(uxn: &mut crate::UXN, port: usize, val: u8) {
+pub fn screen_dev(uxn: &mut UXN, port: usize, val: u8) {
 		let rel = port & 0x0F;
 
 		match rel {
@@ -37,7 +39,7 @@ pub fn screen_dev(uxn: &mut crate::UXN, port: usize, val: u8) {
 	}
 }
 
-pub fn console_dev(uxn: &mut crate::UXN, port: usize, val: u8) {
+pub fn console_dev(uxn: &mut UXN, port: usize, val: u8) {
 		let rel = port & 0x0F;
 
 		match rel {
@@ -80,7 +82,7 @@ fn palette(mem_color: u8) -> (u8, u8) {
 	return ( c1 + (c1 << 4), c2 + (c2 << 4) )
 }
 
-pub fn system_dev(uxn: &mut crate::UXN, port: usize, val: u8) {
+pub fn system_dev(uxn: &mut UXN, port: usize, val: u8) {
 		let rel = port & 0x0F;
 
 		match rel {
