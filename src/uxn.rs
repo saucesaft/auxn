@@ -1,4 +1,5 @@
 use crate::system::{Device, Opcode};
+use crate:: devices::*;
 
 use arrayvec::ArrayVec;
 
@@ -29,10 +30,14 @@ pub struct UXN {
 
     pub halted: bool,
     pub limit: u64,
+
+    pub system: SystemDevice,
+    pub console: ConsoleDevice,
+    pub screen: ScreenDevice,
 }
 
 impl UXN {
-    pub fn new() -> Self {
+    pub fn new(w: u32, h: u32) -> Self {
         UXN {
             ram: ArrayVec::<u8, 0x13000>::from([0; 0x13000]),
             
@@ -59,6 +64,10 @@ impl UXN {
 
             halted: false,
             limit: 0x40000,
+
+            system: SystemDevice::new(),
+            console: ConsoleDevice::new(),
+            screen: ScreenDevice::new(w, h),
         }
     }
 

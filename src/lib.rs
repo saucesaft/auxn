@@ -14,6 +14,9 @@ use uxn::UXN;
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
 const PEAK_METER_DECAY_MS: f64 = 150.0;
 
+const WIDTH: u32 = 64 * 8;
+const HEIGHT: u32 = 40 * 8;
+
 /// This is mostly identical to the gain example, minus some fluff, and with a GUI.
 pub struct Gain {
     params: Arc<GainParams>,
@@ -57,7 +60,7 @@ impl Default for Gain {
 impl Default for GainParams {
     fn default() -> Self {
         Self {
-            editor_state: EguiState::from_size(300, 180),
+            editor_state: EguiState::from_size(WIDTH, HEIGHT),
 
             // See the main gain example for more details
             gain: FloatParam::new(
@@ -99,7 +102,7 @@ impl Plugin for Gain {
 
     fn editor(&self, async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
 
-        let uxn = Mutex::new(UXN::new());
+        let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT));
 
         {
             let rom = include_bytes!("../pixel.rom").to_vec();

@@ -1,5 +1,13 @@
 use crate::uxn::UXN;
 
+pub struct ConsoleDevice {}
+
+impl ConsoleDevice {
+	pub fn new() -> Self {
+		ConsoleDevice {}
+	}
+}
+
 pub fn console(uxn: &mut UXN, port: usize, val: u8) {
 		let rel = port & 0x0F;
 
