@@ -129,21 +129,39 @@ impl Plugin for Gain {
                         cycle.step();
                     }
 
-                    let p1 = egui::Pos2::new(0.0, 0.0);
-                    let p2 = egui::Pos2::new(1.0, 1.0);
 
-                    let rect = egui::Rect::from_two_pos(p1, p2);
+                    // new implementation idea,
+                    // list of enum messages with color and x,y coordinate
+                    // instead of vectors
 
-                    painter.rect_filled(
-                        rect,
-                        0.0,
-                        egui::Color32::WHITE,
-                    );
+                    for (i, el) in cycle.screen.fg.iter().enumerate() {
+                        if *el != -1 {
+                            // UPDATE THE WIDTH, NOT ONLY THE CONSTANT
+                            let x = (i as u32) % WIDTH;
+                            let y = (i as u32) / WIDTH;
+
+                            let p1 = egui::Pos2::new(x as f32, y as f32);
+                            let p2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
+
+                            let rect = egui::Rect::from_two_pos(p1, p2);
+
+                            let color = cycle.system.get_color(*el);
+
+                            painter.rect_filled(
+                                rect,
+                                0.0,
+                                color,
+                            );
+
+                        }
+                    }
 
                 });
             },
         )
     }
+
+    // fn pixel(&self, x, y)
 
     fn accepts_bus_config(&self, config: &BusConfig) -> bool {
         // This works with any symmetrical IO layout

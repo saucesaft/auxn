@@ -9,8 +9,8 @@ pub struct ScreenDevice {
 	// color: i8,
 	// layer: i8,
 
-	fg: Vec<i8>,
-	bg: Vec<i8>,
+	pub fg: Vec<i8>,
+	pub bg: Vec<i8>,
 }
 
 impl ScreenDevice {

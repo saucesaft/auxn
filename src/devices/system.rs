@@ -18,6 +18,16 @@ impl SystemDevice {
 			color3: Rgba::from(Color32::BLACK),
 		}
 	}
+
+	pub fn get_color(&self, index: i8) -> Rgba {
+		match index {
+			0 => { return self.color0 },
+			1 => { return self.color1 },
+			2 => { return self.color2 },
+			3 => { return self.color3 },
+			_ => { return Rgba::from(Color32::TRANSPARENT) },
+		}
+	}
 }
 
 pub fn system(uxn: &mut UXN, port: usize, val: u8) {
