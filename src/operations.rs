@@ -17,16 +17,14 @@ impl UXN {
 	pub fn DEO(&mut self, port: usize, val: u8) {
 		self.ram[self.dev + port] = val;
 
-		// println!("{:?}", port & 0xF0);
-
 		match port & 0xF0 {
-			0x00 => crate::system::system_dev(self, port, val),
+			0x00 => crate::devices::system(self, port, val),
 
-			0x10 => crate::system::console_dev(self, port, val),
+			0x10 => crate::devices::console(self, port, val),
 
-			0x20 => crate::system::screen_dev(self, port, val),
+			0x20 => crate::devices::screen(self, port, val),
 
-			_ => println!("Unknown DEO PORT: {}", port & 0xF0),
+			_ => println!("Unknown DEO PORT: {:x?}", port & 0xF0),
 		}
 	}
 

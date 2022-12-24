@@ -1,9 +1,15 @@
 use atomic_float::AtomicF32;
 use nih_plug::prelude::*;
 use nih_plug_egui::{create_egui_editor, egui, EguiState};
-use std::sync::Arc;
-
+use std::sync::{Arc, Mutex};
 use std::{thread, time};
+
+mod uxn;
+mod system;
+mod devices;
+mod operations;
+
+use uxn::UXN;
 
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
 const PEAK_METER_DECAY_MS: f64 = 150.0;
@@ -72,13 +78,6 @@ impl Default for GainParams {
     }
 }
 
-fn print_async() {
-    while true {
-        thread::sleep(time::Duration::new(2, 0));
-        println!("i printed this in another thread");
-    }
-}
-
 impl Plugin for Gain {
     const NAME: &'static str = "Gain GUI (egui)";
     const VENDOR: &'static str = "Moist Plugins GmbH";
@@ -100,6 +99,17 @@ impl Plugin for Gain {
 
     fn editor(&self, async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
 
+        let uxn = Mutex::new(UXN::new());
+
+        {
+            let rom = include_bytes!("../pixel.rom").to_vec();
+
+            let mut setup = uxn.lock().unwrap();
+            setup.pc = 0x100;
+
+            setup.load(rom);
+        }
+
         let params = self.params.clone();
         let peak_meter = self.peak_meter.clone();
         create_egui_editor(
@@ -109,6 +119,12 @@ impl Plugin for Gain {
             move |egui_ctx, setter, _state| {
                 egui::CentralPanel::default().show(egui_ctx, |ui| {
                     let painter = ui.painter();
+
+                    let mut cycle = uxn.lock().unwrap();
+
+                    if !cycle.halted {
+                        cycle.step();
+                    }
 
                     let p1 = egui::Pos2::new(0.0, 0.0);
                     let p2 = egui::Pos2::new(1.0, 1.0);
