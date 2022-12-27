@@ -46,6 +46,9 @@ pub struct GainParams {
     // TODO: Remove this parameter when we're done implementing the widgets
     #[id = "foobar"]
     pub some_int: IntParam,
+
+    #[id = "working-instruction"]
+    pub pc: IntParam,
 }
 
 impl Default for Gain {
@@ -78,7 +81,10 @@ impl Default for GainParams {
             .with_unit(" dB")
             .with_value_to_string(formatters::v2s_f32_gain_to_db(2))
             .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+
             some_int: IntParam::new("Something", 3, IntRange::Linear { min: 0, max: 3 }),
+
+            pc: IntParam::new("Working Instruction", 0x100, IntRange::Linear { min: 0, max: i32::MAX }),
         }
     }
 }
@@ -116,31 +122,65 @@ impl Plugin for Gain {
         let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT, sender));
 
         {
+            // general tests //
+            // let rom = include_bytes!("../tests/arithmetic.rom").to_vec();
+            // let rom = include_bytes!("../tests/literals.rom").to_vec();
+            // let rom = include_bytes!("../tests/jumps.rom").to_vec();
+            // let rom = include_bytes!("../tests/memory.rom").to_vec();
+            // let rom = include_bytes!("../tests/stack.rom").to_vec();
+
+            // video related //
             // let rom = include_bytes!("../pixel.rom").to_vec();
             let rom = include_bytes!("../../uxn/line.rom").to_vec();
             // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
 
             let mut setup = uxn.lock().unwrap();
-            setup.pc = 0x100;
+            // setup.pc = 0x100;
 
             setup.load(rom);
+
+            // make it so that if any error happens
+            // this function returns it and passes it to the gui
+
+            // - maybe move this function to the init?
+            // i have an slight asumption this will run everytime you open the gui
+            // - run it as another thread but have it return a bool
+            // that will change when the start is ready but let's the app
+            // advance into the gui and show that it is booting up
+            setup.eval(0x100);
         }
 
         let params = self.params.clone();
         let peak_meter = self.peak_meter.clone();
+
+        // let mut pc = 0x100;
+
         create_egui_editor(
             self.params.editor_state.clone(),
             (),
             |_, _| {},
             move |egui_ctx, setter, _state| {
                 egui::CentralPanel::default().show(egui_ctx, |ui| {
+
                     let painter = ui.painter();
+                    println!("{:?}", painter.layer_id());
 
                     let mut cycle = uxn.lock().unwrap();
 
-                    if !cycle.halted {
-                        cycle.step();
-                    }
+                    // if !cycle.halted {
+
+                    //     setter.begin_set_parameter(&params.pc);
+                    //     setter.set_parameter(&params.pc, cycle.step(params.pc.value() as usize) as i32 );
+                    //     setter.end_set_parameter(&params.pc);
+
+                    //     // pc = cycle.step(pc);
+                    // }
+
+                    // println!("{:?}", setter);
+
+                    // params.pc = params.pc + 1;
+
+                    // println!("{}", params.pc);
 
                     // new implementation idea,
                     // list of enum messages with color and x,y coordinate
@@ -158,22 +198,29 @@ impl Plugin for Gain {
                         color,
                     );
 
-                    while let Ok(draw_op) = rx.lock() .unwrap().try_recv() {
-                        match draw_op {
-                            DrawOperation::Pixel{x, y, color} => {
-                                let pos1 = egui::Pos2::new(x as f32, y as f32);
-                                let pos2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
+                    // - try to figure out the extend function
+                    // - do something with the rey_recv(), if we get "nothing"
+                    // then we copy that image and to the push pop yes
+                    // while let Ok(draw_op) = rx.lock().unwrap().try_recv() {
+                    //     match draw_op {
+                    //         DrawOperation::Pixel{x, y, color} => {
+                    //             let pos1 = egui::Pos2::new(x as f32, y as f32);
+                    //             let pos2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
 
-                                let rect = egui::Rect::from_two_pos(pos1, pos2);
+                    //             let rect = egui::Rect::from_two_pos(pos1, pos2);
 
-                                painter.rect_filled(
-                                    rect,
-                                    0.0,
-                                    color,
-                                );
-                            }
-                        }
-                    }
+                    //             painter.rect_filled(
+                    //                 rect,
+                    //                 0.0,
+                    //                 color,
+                    //             );
+                    //         }
+
+                    //         _ => {
+                    //             println!("no more operations");
+                    //         }
+                    //     }
+                    // }
 
                     // for (i, el) in cycle.screen.fg.iter().enumerate() {
                     //     if *el != -1 {

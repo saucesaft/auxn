@@ -58,11 +58,11 @@ impl UXN {
 		}
 	}
 
-	pub fn JUMP(&self, addr: usize) -> usize {
+	pub fn JUMP(&self, addr: usize, pc: usize) -> usize {
 		if self.r2 {
 			return addr
 		} else {
-			return self.pc + self.rel(addr)
+			return pc + self.rel(addr)
 		}
 	}
 

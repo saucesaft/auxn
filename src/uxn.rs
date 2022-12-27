@@ -23,7 +23,7 @@ pub struct UXN {
     pub rr: bool,
     pub rk: bool,
 
-    pub pc: usize,
+    // pub pc: usize,
 
     pub a: u16,
     pub b: u16,
@@ -58,7 +58,7 @@ impl UXN {
             rr: false,
             rk: false,
 
-            pc: 0,
+            // pc: 0,
 
             // registers
             a: 0,
@@ -144,24 +144,24 @@ impl UXN {
         return 1;
     }
 
-    pub fn eval(&mut self, pc: usize) {
-        self.pc = pc;
+    pub fn eval(&mut self, mut pc: usize) {
+        // let eval_pc = pc;
 
-        if self.pc == 0 || self.dev_get(0xf) != 0 {
+        if pc == 0 || self.dev_get(0xf) != 0 {
             return;
         }
 
         while !self.halted {
-            self.step()
+            pc = self.step(pc);
         }
 
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self, mut pc: usize) -> usize {
         let debug = false;
     
-        let instr = self.ram[self.pc];
-        self.pc = self.pc.wrapping_add(1);
+        let instr = self.ram[pc];
+        pc = pc.wrapping_add(1);
 
         if instr == 0 {
             self.halted = true;
@@ -204,17 +204,17 @@ impl UXN {
 
         let mut debug_out: u16 = 0;
 
-        // print!("PC: {:?} ", self.pc);
+        // print!("PC: {:?} ", pc);
         match Opcode::try_from(instr & MAX_INSTR) {
             Ok(Opcode::LIT) => {
                 if debug {
                     println!("-> LIT");    
                 }
 
-                debug_out = self.PEEK(self.pc);
+                debug_out = self.PEEK(pc);
 
-                self.PUSH( self.PEEK(self.pc));
-                self.pc = self.pc.wrapping_add(1).wrapping_add(self.bs);
+                self.PUSH( self.PEEK(pc));
+                pc = pc.wrapping_add(1).wrapping_add(self.bs);
             }
 
             Ok(Opcode::INC) => {
@@ -352,7 +352,7 @@ impl UXN {
                 }
                 
                 let x = self.POP().into();
-                self.pc = self.JUMP( x );
+                pc = self.JUMP( x, pc );
             }
 
             Ok(Opcode::JCN) => {
@@ -362,7 +362,7 @@ impl UXN {
                 
                 self.a = self.POP();
                 if self.POP8() != 0 {
-                    self.pc = self.JUMP(self.a.into());
+                    pc = self.JUMP(self.a.into(), pc);
                 }
             }
 
@@ -371,9 +371,9 @@ impl UXN {
                     println!("-> JSR");    
                 }
                 
-                self.DST_PUSH16(self.pc.try_into().unwrap());
+                self.DST_PUSH16(pc.try_into().unwrap());
                 let x = self.POP().into();
-                self.pc = self.JUMP( x );
+                pc = self.JUMP( x, pc );
             }
 
             Ok(Opcode::STH) => {
@@ -417,7 +417,7 @@ impl UXN {
                 
                 let x = self.POP8();
 
-                self.PUSH( self.PEEK( self.pc + self.rel(x.into()) ) );
+                self.PUSH( self.PEEK( pc + self.rel(x.into()) ) );
             }
 
             Ok(Opcode::STR) => {
@@ -428,7 +428,7 @@ impl UXN {
                 let x = self.POP8();
                 let y = self.POP();
 
-                self.POKE(self.pc + self.rel(x.into()), y);
+                self.POKE(pc + self.rel(x.into()), y);
             }
 
             Ok(Opcode::LDA) => {
@@ -569,7 +569,7 @@ impl UXN {
             // let wst = &self.ram[self.wst..self.wst+20];
             // let rst = &self.ram[self.rst..self.rst+20];
 
-            // println!("pc: {:#x?} instr: {:#x?}", self.pc, instr & MAX_INSTR);
+            // println!("pc: {:#x?} instr: {:#x?}", pc, instr & MAX_INSTR);
             // println!("rr: {:?} r2: {:?}", self.rr, self.r2);
             // println!("wst: {:x?}", wst);
             // println!("rst: {:x?}", rst);
@@ -577,11 +577,11 @@ impl UXN {
 
             // // // 0x23e final pc
 
-            // if self.pc >= 0x1e0 {
+            // if pc >= 0x1e0 {
             //     break
             // }
 
-        
+        return pc;
 
     }
 

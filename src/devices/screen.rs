@@ -102,6 +102,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 				};
 
 				uxn.sender.send(p).unwrap();
+				println!("pixel sent :)");
 
 				// if layer == 0 {
 				// 	blit(&mut uxn.screen.bg, x.into(), y.into(), color, width);
