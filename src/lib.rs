@@ -2,7 +2,8 @@ use atomic_float::AtomicF32;
 use nih_plug::prelude::*;
 use nih_plug_egui::{create_egui_editor, egui, EguiState};
 use std::sync::{Arc, Mutex};
-use std::{thread, time};
+use std::{thread, time, mem};
+use std::sync::mpsc;
 
 mod uxn;
 mod system;
@@ -10,6 +11,7 @@ mod devices;
 mod operations;
 
 use uxn::UXN;
+use devices::DrawOperation;
 
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
 const PEAK_METER_DECAY_MS: f64 = 150.0;
@@ -81,6 +83,10 @@ impl Default for GainParams {
     }
 }
 
+fn loopy() {
+    println!("another thread :)");
+}
+
 impl Plugin for Gain {
     const NAME: &'static str = "Gain GUI (egui)";
     const VENDOR: &'static str = "Moist Plugins GmbH";
@@ -94,7 +100,7 @@ impl Plugin for Gain {
 
     const SAMPLE_ACCURATE_AUTOMATION: bool = true;
 
-    type BackgroundTask = ();
+    type BackgroundTask = &'static (dyn Fn() + Sync + Send);
 
     fn params(&self) -> Arc<dyn Params> {
         self.params.clone()
@@ -102,10 +108,17 @@ impl Plugin for Gain {
 
     fn editor(&self, async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
 
-        let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT));
+        async_executor.execute_gui(&loopy);
+
+        let (sender, receiver): (mpsc::Sender<devices::DrawOperation>, mpsc::Receiver<devices::DrawOperation>) = mpsc::channel();
+        let rx = Mutex::new(receiver);
+
+        let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT, sender));
 
         {
-            let rom = include_bytes!("../pixel.rom").to_vec();
+            // let rom = include_bytes!("../pixel.rom").to_vec();
+            let rom = include_bytes!("../../uxn/line.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
 
             let mut setup = uxn.lock().unwrap();
             setup.pc = 0x100;
@@ -129,32 +142,60 @@ impl Plugin for Gain {
                         cycle.step();
                     }
 
-
                     // new implementation idea,
                     // list of enum messages with color and x,y coordinate
                     // instead of vectors
+                    let p1 = egui::Pos2::new(0.0, 0.0);
+                    let p2 = egui::Pos2::new(WIDTH as f32, HEIGHT as f32);
 
-                    for (i, el) in cycle.screen.fg.iter().enumerate() {
-                        if *el != -1 {
-                            // UPDATE THE WIDTH, NOT ONLY THE CONSTANT
-                            let x = (i as u32) % WIDTH;
-                            let y = (i as u32) / WIDTH;
+                    let rect = egui::Rect::from_two_pos(p1, p2);
 
-                            let p1 = egui::Pos2::new(x as f32, y as f32);
-                            let p2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
+                    let color = cycle.system.get_color(0);
 
-                            let rect = egui::Rect::from_two_pos(p1, p2);
+                    painter.rect_filled(
+                        rect,
+                        0.0,
+                        color,
+                    );
 
-                            let color = cycle.system.get_color(*el);
+                    while let Ok(draw_op) = rx.lock() .unwrap().try_recv() {
+                        match draw_op {
+                            DrawOperation::Pixel{x, y, color} => {
+                                let pos1 = egui::Pos2::new(x as f32, y as f32);
+                                let pos2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
 
-                            painter.rect_filled(
-                                rect,
-                                0.0,
-                                color,
-                            );
+                                let rect = egui::Rect::from_two_pos(pos1, pos2);
 
+                                painter.rect_filled(
+                                    rect,
+                                    0.0,
+                                    color,
+                                );
+                            }
                         }
                     }
+
+                    // for (i, el) in cycle.screen.fg.iter().enumerate() {
+                    //     if *el != -1 {
+                    //         // UPDATE THE WIDTH, NOT ONLY THE CONSTANT
+                    //         let x = (i as u32) % WIDTH;
+                    //         let y = (i as u32) / WIDTH;
+
+                    //         let p1 = egui::Pos2::new(x as f32, y as f32);
+                    //         let p2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
+
+                    //         let rect = egui::Rect::from_two_pos(p1, p2);
+
+                    //         let color = cycle.system.get_color(*el);
+
+                    //         painter.rect_filled(
+                    //             rect,
+                    //             0.0,
+                    //             color,
+                    //         );
+
+                    //     }
+                    // }
 
                 });
             },

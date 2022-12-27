@@ -1,5 +1,6 @@
 use crate::system::{Device, Opcode};
 use crate:: devices::*;
+use std::sync::mpsc;
 
 use arrayvec::ArrayVec;
 
@@ -31,13 +32,15 @@ pub struct UXN {
     pub halted: bool,
     pub limit: u64,
 
+    pub sender: mpsc::Sender<DrawOperation>,
+
     pub system: SystemDevice,
     pub console: ConsoleDevice,
     pub screen: ScreenDevice,
 }
 
 impl UXN {
-    pub fn new(w: u32, h: u32) -> Self {
+    pub fn new(w: u32, h: u32, s: mpsc::Sender<DrawOperation>) -> Self {
         UXN {
             ram: ArrayVec::<u8, 0x13000>::from([0; 0x13000]),
             
@@ -64,6 +67,8 @@ impl UXN {
 
             halted: false,
             limit: 0x40000,
+
+            sender: s,
 
             system: SystemDevice::new(),
             console: ConsoleDevice::new(),
