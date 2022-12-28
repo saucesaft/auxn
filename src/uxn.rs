@@ -23,8 +23,6 @@ pub struct UXN {
     pub rr: bool,
     pub rk: bool,
 
-    // pub pc: usize,
-
     pub a: u16,
     pub b: u16,
     pub c: u16,
@@ -32,7 +30,7 @@ pub struct UXN {
     pub halted: bool,
     pub limit: u64,
 
-    pub sender: mpsc::Sender<DrawOperation>,
+    // pub sender: mpsc::Sender<DrawOperation>,
 
     pub system: SystemDevice,
     pub console: ConsoleDevice,
@@ -40,7 +38,7 @@ pub struct UXN {
 }
 
 impl UXN {
-    pub fn new(w: u32, h: u32, s: mpsc::Sender<DrawOperation>) -> Self {
+    pub fn new(w: u32, h: u32) -> Self {
         UXN {
             ram: ArrayVec::<u8, 0x13000>::from([0; 0x13000]),
             
@@ -58,8 +56,6 @@ impl UXN {
             rr: false,
             rk: false,
 
-            // pc: 0,
-
             // registers
             a: 0,
             b: 0,
@@ -68,7 +64,7 @@ impl UXN {
             halted: false,
             limit: 0x40000,
 
-            sender: s,
+            // sender: s,
 
             system: SystemDevice::new(),
             console: ConsoleDevice::new(),
@@ -145,16 +141,16 @@ impl UXN {
     }
 
     pub fn eval(&mut self, mut pc: usize) {
-        // let eval_pc = pc;
-
         if pc == 0 || self.dev_get(0xf) != 0 {
             return;
         }
 
         while !self.halted {
+            println!("--> step {:#x?}", pc);
             pc = self.step(pc);
         }
 
+        self.halted = false;
     }
 
     pub fn step(&mut self, mut pc: usize) -> usize {
@@ -164,6 +160,7 @@ impl UXN {
         pc = pc.wrapping_add(1);
 
         if instr == 0 {
+            println!("--> end");
             self.halted = true;
         }
 

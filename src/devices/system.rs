@@ -19,7 +19,7 @@ impl SystemDevice {
 		}
 	}
 
-	pub fn get_color(&self, index: i8) -> Color32 {
+	pub fn get_color(&self, index: u8) -> Color32 {
 		match index {
 			0 => { return self.color0 },
 			1 => { return self.color1 },

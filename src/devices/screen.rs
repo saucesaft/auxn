@@ -1,5 +1,6 @@
 use crate::uxn::UXN;
-use nih_plug_egui::egui::Color32;
+use nih_plug_egui::egui::{Color32, ColorImage};
+use image::{RgbImage, Rgb, ImageBuffer, DynamicImage, GenericImage};
 
 #[derive(Debug)]
 pub enum DrawOperation {
@@ -15,8 +16,12 @@ pub struct ScreenDevice {
 	// color: i8,
 	// layer: i8,
 
-	// pub fg: Vec<i8>,
+	// pub buffer: ImageBuffer<Rgb<u8>, Vec<u8>>,
+	pub buffer: DynamicImage,
+	pub display: ColorImage,
 	// pub bg: Vec<i8>,
+
+	pub vector: usize,
 }
 
 impl ScreenDevice {
@@ -33,10 +38,30 @@ impl ScreenDevice {
 
 			// layers of pixels
 			// -1 means no pixel, any other number represents the color (e.g 0, 1, 2, 3)
-			// fg: vec![-1; (w*h) as usize],
-			// bg: vec![-1; (w*h) as usize],
+			// buffer: vec![0; (w*h*4) as usize],
+			buffer: DynamicImage::new_rgba8(w, h),
+			display: ColorImage::new([w as usize, h as usize], Color32::RED),
+
+			vector: 0,
 		}
 	}
+
+	pub fn generate(&mut self) {
+		let width = self.width;
+		let height = self.height;
+
+		let size = [width as usize, height as usize];
+
+		let image_buffer = self.buffer.to_rgba8();
+		let pixels = image_buffer.as_flat_samples();
+
+		self.display = ColorImage::from_rgba_unmultiplied(size, pixels.as_slice());
+	}
+
+	pub fn vector(&self) -> usize {
+		return self.vector;
+	}
+
 }
 
 pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
@@ -57,7 +82,9 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 				// for this, we will insert a JMP into the code?
 				// new idea, we could just change the pc variable according to each vector
 
-				println!("Set Screen Vector: {}", a | b);			
+				println!("Set Screen Vector: {:#x?}", a | b);
+
+				uxn.screen.vector = (a | b) as usize;	
 			}
 		}
 
@@ -89,26 +116,16 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
 		// write a pixel to the screen
 		0xe => {
-				// let x = uxn.screen.x;
-				// let y = uxn.screen.y;
-				// let layer = (uxn.ram[uxn.dev + port] & 0x40);
-				let color = uxn.system.get_color((uxn.ram[uxn.dev + port] & 0x3) as i8);
-				// let width = uxn.screen.width;
+				let x = uxn.screen.x;
+				let y = uxn.screen.y;
+				// // let layer = (uxn.ram[uxn.dev + port] & 0x40);
+				// // let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
+				// let color = uxn.ram[uxn.dev + port] & 0x3;
 
-				let p = DrawOperation::Pixel {
-					x: uxn.screen.x,
-					y: uxn.screen.y,
-					color: color,
-				};
+				// blit(&mut uxn.screen.buffer, x.into(), y.into(), color, width);
 
-				uxn.sender.send(p).unwrap();
-				println!("pixel sent :)");
-
-				// if layer == 0 {
-				// 	blit(&mut uxn.screen.bg, x.into(), y.into(), color, width);
-				// } else {
-				// 	blit(&mut uxn.screen.fg, x.into(), y.into(), color, width);
-				// }
+				uxn.screen.buffer.put_pixel(x.into(), y.into(), image::Rgba::from([255,255,55,255]));
+				println!("-> howdy");
 		}
 
 		0xf => {
@@ -121,6 +138,6 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 	}
 }
 
-// fn blit(layer: &mut Vec<i8>, x: u32, y: u32, color: u8, width: u32) {
-// 	layer[(x + width * y) as usize] = color as i8;
-// }
+fn blit(layer: &mut Vec<u8>, x: u32, y: u32, color: u8, width: u32) {
+	layer[(x + width * y) as usize] = color;
+}

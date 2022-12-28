@@ -90,7 +90,8 @@ impl UXN {
 
 	pub fn PUSH8(&mut self, s: u8) {
 		if self.ptr() == 0xff {
-			panic!("OVERFLOW");
+			println!("OVERFLOW");
+			// panic!("OVERFLOW");
 		}
 		let index = self.inc();
 		self.ram[self.src + index] = s;

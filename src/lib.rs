@@ -46,9 +46,6 @@ pub struct GainParams {
     // TODO: Remove this parameter when we're done implementing the widgets
     #[id = "foobar"]
     pub some_int: IntParam,
-
-    #[id = "working-instruction"]
-    pub pc: IntParam,
 }
 
 impl Default for Gain {
@@ -84,13 +81,9 @@ impl Default for GainParams {
 
             some_int: IntParam::new("Something", 3, IntRange::Linear { min: 0, max: 3 }),
 
-            pc: IntParam::new("Working Instruction", 0x100, IntRange::Linear { min: 0, max: i32::MAX }),
+            // pc: IntParam::new("Working Instruction", 0x100, IntRange::Linear { min: 0, max: i32::MAX }),
         }
     }
-}
-
-fn loopy() {
-    println!("another thread :)");
 }
 
 impl Plugin for Gain {
@@ -114,12 +107,10 @@ impl Plugin for Gain {
 
     fn editor(&self, async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
 
-        async_executor.execute_gui(&loopy);
+        // let (sender, receiver): (mpsc::Sender<devices::DrawOperation>, mpsc::Receiver<devices::DrawOperation>) = mpsc::channel();
+        // let rx = Mutex::new(receiver);
 
-        let (sender, receiver): (mpsc::Sender<devices::DrawOperation>, mpsc::Receiver<devices::DrawOperation>) = mpsc::channel();
-        let rx = Mutex::new(receiver);
-
-        let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT, sender));
+        let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT));
 
         {
             // general tests //
@@ -131,8 +122,8 @@ impl Plugin for Gain {
 
             // video related //
             // let rom = include_bytes!("../pixel.rom").to_vec();
-            let rom = include_bytes!("../../uxn/line.rom").to_vec();
-            // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/line.rom").to_vec();
+            let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
 
             let mut setup = uxn.lock().unwrap();
             // setup.pc = 0x100;
@@ -148,6 +139,7 @@ impl Plugin for Gain {
             // that will change when the start is ready but let's the app
             // advance into the gui and show that it is booting up
             setup.eval(0x100);
+            setup.screen.generate();
         }
 
         let params = self.params.clone();
@@ -162,10 +154,18 @@ impl Plugin for Gain {
             move |egui_ctx, setter, _state| {
                 egui::CentralPanel::default().show(egui_ctx, |ui| {
 
+                    // println!("{}", egui_ctx);
+
                     let painter = ui.painter();
-                    println!("{:?}", painter.layer_id());
 
                     let mut cycle = uxn.lock().unwrap();
+
+                    let screen_vector_addr = cycle.screen.vector();
+
+                    cycle.eval(screen_vector_addr);
+                    // we need to cache this function
+                    // if we actually drew something new, we regenerate
+                    cycle.screen.generate();
 
                     // if !cycle.halted {
 
@@ -185,18 +185,18 @@ impl Plugin for Gain {
                     // new implementation idea,
                     // list of enum messages with color and x,y coordinate
                     // instead of vectors
-                    let p1 = egui::Pos2::new(0.0, 0.0);
-                    let p2 = egui::Pos2::new(WIDTH as f32, HEIGHT as f32);
+                    // let p1 = egui::Pos2::new(0.0, 0.0);
+                    // let p2 = egui::Pos2::new(WIDTH as f32, HEIGHT as f32);
 
-                    let rect = egui::Rect::from_two_pos(p1, p2);
+                    // let rect = egui::Rect::from_two_pos(p1, p2);
 
-                    let color = cycle.system.get_color(0);
+                    // let color = cycle.system.get_color(0);
 
-                    painter.rect_filled(
-                        rect,
-                        0.0,
-                        color,
-                    );
+                    // painter.rect_filled(
+                    //     rect,
+                    //     0.0,
+                    //     color,
+                    // );
 
                     // - try to figure out the extend function
                     // - do something with the rey_recv(), if we get "nothing"
@@ -222,29 +222,21 @@ impl Plugin for Gain {
                     //     }
                     // }
 
-                    // for (i, el) in cycle.screen.fg.iter().enumerate() {
-                    //     if *el != -1 {
-                    //         // UPDATE THE WIDTH, NOT ONLY THE CONSTANT
-                    //         let x = (i as u32) % WIDTH;
-                    //         let y = (i as u32) / WIDTH;
+                    let texture = egui_ctx.load_texture(
+                            "my_image",
+                            cycle.screen.display.clone(),
+                            Default::default(),
+                        );
 
-                    //         let p1 = egui::Pos2::new(x as f32, y as f32);
-                    //         let p2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
+                    ui.image(&texture, texture.size_vec2());
 
-                    //         let rect = egui::Rect::from_two_pos(p1, p2);
+                egui::Window::new("debug").show(egui_ctx, |ui| {
+                    egui_ctx.texture_ui(ui);
+                });
 
-                    //         let color = cycle.system.get_color(*el);
-
-                    //         painter.rect_filled(
-                    //             rect,
-                    //             0.0,
-                    //             color,
-                    //         );
-
-                    //     }
-                    // }
 
                 });
+
             },
         )
     }
