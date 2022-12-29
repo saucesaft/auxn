@@ -30,8 +30,6 @@ pub struct UXN {
     pub halted: bool,
     pub limit: u64,
 
-    // pub sender: mpsc::Sender<DrawOperation>,
-
     pub system: SystemDevice,
     pub console: ConsoleDevice,
     pub screen: ScreenDevice,
@@ -63,8 +61,6 @@ impl UXN {
 
             halted: false,
             limit: 0x40000,
-
-            // sender: s,
 
             system: SystemDevice::new(),
             console: ConsoleDevice::new(),
@@ -103,7 +99,7 @@ impl UXN {
     }
 
     pub fn inc(&mut self) -> usize {
-        let val = self.ram[self.src + 0xff];
+        let val = self.ram[self.src + 0xff].clone();
 
         self.ram[self.src + 0xff] = self.ram[self.src + 0xff] + 1;
 
@@ -128,16 +124,36 @@ impl UXN {
             return self.pk;
         } else {
             self.ram[self.src + 0xff] = self.ram[self.src + 0xff] - 1;
-
             return (self.ram[self.src + 0xff]).into();
         }
     }
 
-    fn port(&self, id: u8, indev: &Device, outdev: &Device) {}
-
     // move to external?
     fn interrupt(&self) -> u8 {
         return 1;
+    }
+
+    fn reset(&mut self) {
+        self.halted = false;
+        self.limit = 0x40000;
+
+        self.wst = 0x10000;
+        self.rst = 0x11000;
+        self.dev = 0x12000;
+
+        self.src = 0;
+        self.dst = 0;
+
+        self.bs = 0;
+        self.pk = 0;
+
+        self.r2 = false;
+        self.rr = false;
+        self.rk = false;
+
+        self.a = 0;
+        self.b = 0;
+        self.c = 0;
     }
 
     pub fn eval(&mut self, mut pc: usize) {
@@ -146,21 +162,20 @@ impl UXN {
         }
 
         while !self.halted {
-            println!("--> step {:#x?}", pc);
             pc = self.step(pc);
         }
 
-        self.halted = false;
+        self.reset();
     }
 
     pub fn step(&mut self, mut pc: usize) -> usize {
+
         let debug = false;
     
         let instr = self.ram[pc];
         pc = pc.wrapping_add(1);
 
         if instr == 0 {
-            println!("--> end");
             self.halted = true;
         }
 
@@ -199,16 +214,11 @@ impl UXN {
             self.pk = self.ptr() as usize;
         }
 
-        let mut debug_out: u16 = 0;
-
-        // print!("PC: {:?} ", pc);
         match Opcode::try_from(instr & MAX_INSTR) {
             Ok(Opcode::LIT) => {
                 if debug {
                     println!("-> LIT");    
                 }
-
-                debug_out = self.PEEK(pc);
 
                 self.PUSH( self.PEEK(pc));
                 pc = pc.wrapping_add(1).wrapping_add(self.bs);
@@ -220,6 +230,9 @@ impl UXN {
                 }
                 
                 let x = self.POP();
+
+                // println!("ptr: {}", self.ptr());
+
                 self.PUSH( (x + 1).into() );
             }
 

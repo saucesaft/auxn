@@ -82,7 +82,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 				// for this, we will insert a JMP into the code?
 				// new idea, we could just change the pc variable according to each vector
 
-				println!("Set Screen Vector: {:#x?}", a | b);
+				// println!("Set Screen Vector: {:#x?}", a | b);
 
 				uxn.screen.vector = (a | b) as usize;	
 			}
@@ -102,6 +102,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 				let b = (uxn.ram[uxn.dev + port] as i32);
 
 				uxn.screen.x = (a + b) as u16;
+				// println!("x: {}", uxn.screen.x);
 			}
 		}
 
@@ -124,8 +125,9 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
 				// blit(&mut uxn.screen.buffer, x.into(), y.into(), color, width);
 
+				// println!("at x: {:?}", x);
+
 				uxn.screen.buffer.put_pixel(x.into(), y.into(), image::Rgba::from([255,255,55,255]));
-				println!("-> howdy");
 		}
 
 		0xf => {

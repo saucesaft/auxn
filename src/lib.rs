@@ -154,8 +154,6 @@ impl Plugin for Gain {
             move |egui_ctx, setter, _state| {
                 egui::CentralPanel::default().show(egui_ctx, |ui| {
 
-                    // println!("{}", egui_ctx);
-
                     let painter = ui.painter();
 
                     let mut cycle = uxn.lock().unwrap();
