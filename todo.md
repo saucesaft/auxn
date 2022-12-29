@@ -1,0 +1,23 @@
+## TODO
+-[x] UXN CPU
+	- [x] arithmetic.rom
+	- [x] literals.rom
+	- [x] jumps.rom
+	- [x] memory.rom
+	- [x] stack.rom
+-[ ] Replace all panics with warnings in the frontend
+	-[ ] Underflow
+	-[ ] Overflow
+	-[ ] Division
+	-[ ] No Instruction
+-[ ] Window size changing implemented as an egui window
+	-[ ] Update until baseview supports resizing
+-[ ] Video
+	-[ ] Vector
+	-[ ] Sprites
+	-[ ] Auto mode
+	-[ ] Effects and blending
+-[ ] Mouse
+-[ ] Controller
+-[ ] Audio
+-[ ] Midi

@@ -17,4 +17,5 @@ uxn virtual machine running inside of a audio plugin
 
 ### special thanks to:
 - rekka and devine for creating uxn
+- compudanzas and their amazing uxn tutorial
 - the c2rust team which helped a lot in this port

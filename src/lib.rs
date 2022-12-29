@@ -139,7 +139,6 @@ impl Plugin for Gain {
             // that will change when the start is ready but let's the app
             // advance into the gui and show that it is booting up
             setup.eval(0x100);
-            setup.screen.generate();
         }
 
         let params = self.params.clone();
@@ -150,20 +149,25 @@ impl Plugin for Gain {
         create_egui_editor(
             self.params.editor_state.clone(),
             (),
-            |_, _| {},
-            move |egui_ctx, setter, _state| {
-                egui::CentralPanel::default().show(egui_ctx, |ui| {
+            move |_, _| {},
+            move |ctx, setter, _state| {
+                egui::CentralPanel::default().show(ctx, |ui| {
 
                     let painter = ui.painter();
 
                     let mut cycle = uxn.lock().unwrap();
+                    // cycle.screen.generate(ctx);
 
                     let screen_vector_addr = cycle.screen.vector();
 
                     cycle.eval(screen_vector_addr);
                     // we need to cache this function
                     // if we actually drew something new, we regenerate
-                    cycle.screen.generate();
+                    
+                    if cycle.screen.change {
+                        cycle.screen.generate(ctx);
+                        cycle.screen.change = false;
+                    }
 
                     // if !cycle.halted {
 
@@ -220,16 +224,12 @@ impl Plugin for Gain {
                     //     }
                     // }
 
-                    let texture = egui_ctx.load_texture(
-                            "my_image",
-                            cycle.screen.display.clone(),
-                            Default::default(),
-                        );
+                    let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
 
-                    ui.image(&texture, texture.size_vec2());
+                    ui.image(texture, texture.size_vec2());
 
-                egui::Window::new("debug").show(egui_ctx, |ui| {
-                    egui_ctx.texture_ui(ui);
+                egui::Window::new("debug").show(ctx, |ui| {
+                    ctx.texture_ui(ui);
                 });
 
 

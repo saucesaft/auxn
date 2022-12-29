@@ -1,5 +1,5 @@
 use crate::uxn::UXN;
-use nih_plug_egui::egui::{Color32, ColorImage};
+use nih_plug_egui::egui::{Color32, ColorImage, TextureHandle, Context};
 use image::{RgbImage, Rgb, ImageBuffer, DynamicImage, GenericImage};
 
 #[derive(Debug)]
@@ -16,12 +16,12 @@ pub struct ScreenDevice {
 	// color: i8,
 	// layer: i8,
 
-	// pub buffer: ImageBuffer<Rgb<u8>, Vec<u8>>,
-	pub buffer: DynamicImage,
-	pub display: ColorImage,
-	// pub bg: Vec<i8>,
+	pub buffer: ColorImage,
+	pub display: Option<TextureHandle>,
 
 	pub vector: usize,
+
+	pub change: bool
 }
 
 impl ScreenDevice {
@@ -36,26 +36,31 @@ impl ScreenDevice {
 			// color: 0,
 			// layer: 0,
 
-			// layers of pixels
-			// -1 means no pixel, any other number represents the color (e.g 0, 1, 2, 3)
-			// buffer: vec![0; (w*h*4) as usize],
-			buffer: DynamicImage::new_rgba8(w, h),
-			display: ColorImage::new([w as usize, h as usize], Color32::RED),
+			buffer: ColorImage::new([w as usize, h as usize], Color32::BLACK),
+			display: None::<TextureHandle>,
 
 			vector: 0,
+
+			change: false,
 		}
 	}
 
-	pub fn generate(&mut self) {
-		let width = self.width;
-		let height = self.height;
+	pub fn generate(&mut self, ctx: &Context) {
+		// let width = self.width;
+		// let height = self.height;
 
-		let size = [width as usize, height as usize];
+		// let size = [width as usize, height as usize];
 
-		let image_buffer = self.buffer.to_rgba8();
-		let pixels = image_buffer.as_flat_samples();
+		// let image_buffer = self.buffer.to_rgba8();
+		// let pixels = image_buffer.as_flat_samples();
 
-		self.display = ColorImage::from_rgba_unmultiplied(size, pixels.as_slice());
+		// self.display = ColorImage::from_rgba_unmultiplied(size, pixels.as_slice());
+
+        self.display = Some(ctx.load_texture(
+			"buffer",
+            self.buffer.clone(),
+            Default::default(),
+        ));
 	}
 
 	pub fn vector(&self) -> usize {
@@ -119,15 +124,12 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 		0xe => {
 				let x = uxn.screen.x;
 				let y = uxn.screen.y;
-				// // let layer = (uxn.ram[uxn.dev + port] & 0x40);
-				// // let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
-				// let color = uxn.ram[uxn.dev + port] & 0x3;
+				let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
 
-				// blit(&mut uxn.screen.buffer, x.into(), y.into(), color, width);
+				let width = uxn.screen.width as u16;
 
-				// println!("at x: {:?}", x);
-
-				uxn.screen.buffer.put_pixel(x.into(), y.into(), image::Rgba::from([255,255,55,255]));
+				uxn.screen.buffer.pixels[(x + width * y) as usize] = color;
+				uxn.screen.change = true;
 		}
 
 		0xf => {
@@ -140,6 +142,6 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 	}
 }
 
-fn blit(layer: &mut Vec<u8>, x: u32, y: u32, color: u8, width: u32) {
-	layer[(x + width * y) as usize] = color;
-}
+// fn blit(layer: &mut Vec<u8>, x: u32, y: u32, color: u8, width: u32) {
+// 	layer[(x + width * y) as usize] = color;
+// }
