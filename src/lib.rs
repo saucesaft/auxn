@@ -87,10 +87,10 @@ impl Default for GainParams {
 }
 
 impl Plugin for Gain {
-    const NAME: &'static str = "Gain GUI (egui)";
-    const VENDOR: &'static str = "Moist Plugins GmbH";
-    const URL: &'static str = "https://youtu.be/dQw4w9WgXcQ";
-    const EMAIL: &'static str = "info@example.com";
+    const NAME: &'static str = "talsnd";
+    const VENDOR: &'static str = "auxsaft";
+    const URL: &'static str = "google.com";
+    const EMAIL: &'static str = "eduarch42@protonmail.com";
 
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -106,9 +106,6 @@ impl Plugin for Gain {
     }
 
     fn editor(&self, async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
-
-        // let (sender, receiver): (mpsc::Sender<devices::DrawOperation>, mpsc::Receiver<devices::DrawOperation>) = mpsc::channel();
-        // let rx = Mutex::new(receiver);
 
         let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT));
 
