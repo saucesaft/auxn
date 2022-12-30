@@ -4,7 +4,7 @@ use crate::uxn::UXN;
 impl UXN {
 	pub fn rel(&self, val: usize) -> usize {
 		if val > 0x80 {
-			val - 256
+			val.wrapping_sub(256)
 		} else {
 			val
 		}
@@ -90,7 +90,7 @@ impl UXN {
 
 	pub fn PUSH8(&mut self, s: u8) {
 		if self.ptr() == 0xff {
-			// panic!("OVERFLOW");
+			panic!("OVERFLOW");
 		}
 		let index = self.inc();
 		self.ram[self.src + index] = s;
@@ -137,10 +137,7 @@ impl UXN {
 	}
 
 	pub fn PEEK(&self, x: usize) -> u16 {
-		// println!("inside x: {:?}", x);
-
 		if self.bs != 0 {
-			// println!("{:?}", self.PEEK16(x));
             return self.PEEK16(x)
         } else {
             return self.ram[x] as u16

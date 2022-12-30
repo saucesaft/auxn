@@ -119,6 +119,7 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../tests/jumps.rom").to_vec();
             // let rom = include_bytes!("../tests/memory.rom").to_vec();
             // let rom = include_bytes!("../tests/stack.rom").to_vec();
+            // let rom = include_bytes!("../tests.rom").to_vec();
 
             // video related //
             // let rom = include_bytes!("../pixel.rom").to_vec();
@@ -144,8 +145,6 @@ impl Plugin for Gain {
         let params = self.params.clone();
         let peak_meter = self.peak_meter.clone();
 
-        // let mut pc = 0x100;
-
         create_egui_editor(
             self.params.editor_state.clone(),
             (),
@@ -156,76 +155,17 @@ impl Plugin for Gain {
                     let painter = ui.painter();
 
                     let mut cycle = uxn.lock().unwrap();
-                    // cycle.screen.generate(ctx);
 
                     let screen_vector_addr = cycle.screen.vector();
 
                     cycle.eval(screen_vector_addr);
-                    // we need to cache this function
-                    // if we actually drew something new, we regenerate
-                    
+
                     if cycle.screen.change {
                         cycle.screen.generate(ctx);
                         cycle.screen.change = false;
                     }
 
-                    // if !cycle.halted {
-
-                    //     setter.begin_set_parameter(&params.pc);
-                    //     setter.set_parameter(&params.pc, cycle.step(params.pc.value() as usize) as i32 );
-                    //     setter.end_set_parameter(&params.pc);
-
-                    //     // pc = cycle.step(pc);
-                    // }
-
-                    // println!("{:?}", setter);
-
-                    // params.pc = params.pc + 1;
-
-                    // println!("{}", params.pc);
-
-                    // new implementation idea,
-                    // list of enum messages with color and x,y coordinate
-                    // instead of vectors
-                    // let p1 = egui::Pos2::new(0.0, 0.0);
-                    // let p2 = egui::Pos2::new(WIDTH as f32, HEIGHT as f32);
-
-                    // let rect = egui::Rect::from_two_pos(p1, p2);
-
-                    // let color = cycle.system.get_color(0);
-
-                    // painter.rect_filled(
-                    //     rect,
-                    //     0.0,
-                    //     color,
-                    // );
-
-                    // - try to figure out the extend function
-                    // - do something with the rey_recv(), if we get "nothing"
-                    // then we copy that image and to the push pop yes
-                    // while let Ok(draw_op) = rx.lock().unwrap().try_recv() {
-                    //     match draw_op {
-                    //         DrawOperation::Pixel{x, y, color} => {
-                    //             let pos1 = egui::Pos2::new(x as f32, y as f32);
-                    //             let pos2 = egui::Pos2::new((x+1) as f32, (y+1) as f32);
-
-                    //             let rect = egui::Rect::from_two_pos(pos1, pos2);
-
-                    //             painter.rect_filled(
-                    //                 rect,
-                    //                 0.0,
-                    //                 color,
-                    //             );
-                    //         }
-
-                    //         _ => {
-                    //             println!("no more operations");
-                    //         }
-                    //     }
-                    // }
-
                     let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
-
                     ui.image(texture, texture.size_vec2());
 
                 egui::Window::new("debug").show(ctx, |ui| {
@@ -238,8 +178,6 @@ impl Plugin for Gain {
             },
         )
     }
-
-    // fn pixel(&self, x, y)
 
     fn accepts_bus_config(&self, config: &BusConfig) -> bool {
         // This works with any symmetrical IO layout

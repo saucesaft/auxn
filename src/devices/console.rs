@@ -25,17 +25,18 @@ pub fn console(uxn: &mut UXN, port: usize, val: u8) {
 		}
 
 		0x8 => {
-			// if val == 0x0a{
-			// 	println!();
-			// } else {
+			if val == 0x0a{
+				println!();
+			} else {
 
-				// match char::from_u32(val.into()) {
-				// 	Some(c) => print!("{}", c),
-				// 	None => {},
-				// }
+				match char::from_u32(val.into()) {
+					Some(c) => print!("{}", c),
+					None => {},
+				}
+			}
 
-				print!("{:02x} ", val);
-			// }
+			// uncomment this line to see hex output
+			// print!("{:02x} ", val);
 		}
 
 		_ => {

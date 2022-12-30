@@ -104,6 +104,11 @@ pub fn system(uxn: &mut UXN, port: usize, val: u8) {
 			uxn.system.color3 = Color32::from_rgb(c3.r(), c3.g(), c3_blue);
 		}
 
+		0xe => {
+			// system inspect
+			println!("system inspect - not implemented");
+		}
+
 		0xf => {
 			println!("\nProgram Ended");
 		}

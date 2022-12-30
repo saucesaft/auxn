@@ -193,14 +193,14 @@ impl UXN {
         self.rr = instr & 0x40 != 0;
         self.rk = instr & 0x80 != 0;
 
-        // short-mode ?
+        // short-mode
         if self.r2 {
             self.bs = 1;
         } else {
             self.bs = 0;
         }
 
-        // return-mode ?
+        // return-mode
         if self.rr {
             self.src = self.rst;
             self.dst = self.wst;
@@ -209,10 +209,12 @@ impl UXN {
             self.dst = self.rst;
         }
 
-        // keep-mode ?
+        // keep-mode
         if self.rk {
             self.pk = self.ptr() as usize;
         }
+
+        // println!("rk: {:?}", self.rk);
 
         match Opcode::try_from(instr & MAX_INSTR) {
             Ok(Opcode::LIT) => {
@@ -231,9 +233,7 @@ impl UXN {
                 
                 let x = self.POP();
 
-                // println!("ptr: {}", self.ptr());
-
-                self.PUSH( (x + 1).into() );
+                self.PUSH( x.wrapping_add(1).into() );
             }
 
             Ok(Opcode::POP) => {
@@ -427,7 +427,7 @@ impl UXN {
                 
                 let x = self.POP8();
 
-                self.PUSH( self.PEEK( pc + self.rel(x.into()) ) );
+                self.PUSH( self.PEEK( pc.wrapping_add( self.rel( x.into() ) ) ) );
             }
 
             Ok(Opcode::STR) => {
@@ -438,7 +438,7 @@ impl UXN {
                 let x = self.POP8();
                 let y = self.POP();
 
-                self.POKE(pc + self.rel(x.into()), y);
+                self.POKE(pc.wrapping_add(self.rel(x.into())), y);
             }
 
             Ok(Opcode::LDA) => {
@@ -576,6 +576,8 @@ impl UXN {
             }
         }
 
+            // println!("ptr: {}", self.ptr());
+
             // let wst = &self.ram[self.wst..self.wst+20];
             // let rst = &self.ram[self.rst..self.rst+20];
 
@@ -584,8 +586,6 @@ impl UXN {
             // println!("wst: {:x?}", wst);
             // println!("rst: {:x?}", rst);
             // println!("debug_out: {}\n", debug_out as u8);
-
-            // // // 0x23e final pc
 
             // if pc >= 0x1e0 {
             //     break
