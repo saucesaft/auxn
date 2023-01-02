@@ -1,11 +1,6 @@
 use crate::uxn::UXN;
 use nih_plug_egui::egui::{Color32, ColorImage, Context, TextureHandle};
 
-#[derive(Debug)]
-pub enum DrawOperation {
-    Pixel { x: u16, y: u16, color: Color32 },
-}
-
 pub struct ScreenDevice {
     width: u32,
     height: u32,
@@ -17,7 +12,7 @@ pub struct ScreenDevice {
 
     pub vector: usize,
 
-    pub change: bool,
+    pub redraw: bool,
 }
 
 impl ScreenDevice {
@@ -29,12 +24,13 @@ impl ScreenDevice {
             // coordinates to position the next thing to draw
             x: 0,
             y: 0,
-            buffer: ColorImage::new([w as usize, h as usize], Color32::BLACK),
+
+            buffer: ColorImage::new([w as usize, h as usize], Color32::TRANSPARENT),
             display: None::<TextureHandle>,
 
             vector: 0,
 
-            change: false,
+            redraw: false,
         }
     }
 
@@ -104,7 +100,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             if 0 < x && x < (uxn.screen.width as usize) {
             	if 0 < y && y < (uxn.screen.height as usize) {
 	            	uxn.screen.buffer[(x, y)] = color;
-	            	uxn.screen.change = true;
+	            	uxn.screen.redraw = true;
             	}
             }
         }

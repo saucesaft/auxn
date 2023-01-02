@@ -5,6 +5,7 @@
 	- [x] jumps.rom
 	- [x] memory.rom
 	- [x] stack.rom
+	- [x] tests.rom
 -[ ] Replace all panics with warnings in the frontend
 	-[ ] Underflow
 	-[ ] Overflow
@@ -13,13 +14,14 @@
 -[ ] Window size changing implemented as an egui window
 	-[ ] Update until baseview supports resizing
 -[ ] Video
-	-[ ] Vector
+	-[x] Vector
 	-[ ] Sprites
 	-[ ] Auto mode
 	-[ ] Effects and blending
 	-[ ] Handle bg and fg properly
-	-[ ] Set background color at first
+	-[x] Set background color at first
 -[ ] Mouse
 -[ ] Controller
 -[ ] Audio
 -[ ] Midi
+-[ ] Refactor stacks into their own classes

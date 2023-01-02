@@ -2,6 +2,8 @@ use crate::devices::*;
 use crate::system::{Device, Opcode};
 use std::sync::mpsc;
 
+use nih_plug_egui::egui::{Color32};
+
 use arrayvec::ArrayVec;
 
 const MAX_INSTR: u8 = 0x1f;
@@ -125,6 +127,14 @@ impl UXN {
         } else {
             self.ram[self.src + 0xff] = self.ram[self.src + 0xff] - 1;
             return (self.ram[self.src + 0xff]).into();
+        }
+    }
+
+    pub fn bg_color(&mut self) {
+        for p in &mut self.screen.buffer.pixels {
+            if *p == Color32::TRANSPARENT {
+                *p = self.system.color0;
+            }
         }
     }
 

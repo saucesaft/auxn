@@ -10,7 +10,6 @@ mod operations;
 mod system;
 mod uxn;
 
-use devices::DrawOperation;
 use uxn::UXN;
 
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
@@ -137,6 +136,10 @@ impl Plugin for Gain {
             // that will change when the start is ready but let the app
             // advance into the gui and show that it is booting up
             setup.eval(0x100);
+
+            // we asume the user did define the system colors
+            // so we set the background color here
+            setup.bg_color()
         }
 
         let params = self.params.clone();
@@ -157,9 +160,9 @@ impl Plugin for Gain {
                         // if we have an error, show an specific gui
                         cycle.eval(screen_vector_addr);
 
-                        if cycle.screen.change {
+                        if cycle.screen.redraw {
                             cycle.screen.generate(ctx);
-                            cycle.screen.change = false;
+                            cycle.screen.redraw = false;
                         }
 
                         let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
