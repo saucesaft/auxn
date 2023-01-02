@@ -128,16 +128,18 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             }
 
             if (uxn.dev_get(section + 0x6) & 0x01) != 0 {
+            	uxn.ram[uxn.dev + (section + 0x8)] = (x + 1) as u8;
             	println!("auto x+1");
             }
 
             if (uxn.dev_get(section + 0x6) & 0x02) != 0 {
+            	uxn.ram[uxn.dev + (section + 0xa)] = (y + 1) as u8;
             	println!("auto y+1");
             }
         }
 
         0xf => {
-            println!("screen draw sprite");
+            // println!("screen draw sprite");
         }
 
         _ => {

@@ -61,7 +61,7 @@ impl UXN {
         if self.r2 {
             return addr;
         } else {
-            return pc + self.rel(addr);
+            return pc.wrapping_add(self.rel(addr));
         }
     }
 

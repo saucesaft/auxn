@@ -120,7 +120,8 @@ impl Plugin for Gain {
             // video related //
             // let rom = include_bytes!("../pixel.rom").to_vec();
             // let rom = include_bytes!("../../uxn/line.rom").to_vec();
-            let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
+            let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
 
             let mut setup = uxn.lock().unwrap();
 
