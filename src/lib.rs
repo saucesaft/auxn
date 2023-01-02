@@ -1,17 +1,17 @@
 use atomic_float::AtomicF32;
 use nih_plug::prelude::*;
 use nih_plug_egui::{create_egui_editor, egui, EguiState};
-use std::sync::{Arc, Mutex};
-use std::{thread, time, mem};
 use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
+use std::{mem, thread, time};
 
-mod uxn;
-mod system;
 mod devices;
 mod operations;
+mod system;
+mod uxn;
 
-use uxn::UXN;
 use devices::DrawOperation;
+use uxn::UXN;
 
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
 const PEAK_METER_DECAY_MS: f64 = 150.0;
@@ -107,7 +107,6 @@ impl Plugin for Gain {
     }
 
     fn editor(&self, async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
-
         let uxn = Mutex::new(UXN::new(WIDTH, HEIGHT));
 
         {
@@ -149,31 +148,29 @@ impl Plugin for Gain {
             move |_, _| {},
             move |ctx, setter, _state| {
                 egui::CentralPanel::default().show(ctx, |ui| {
+                    egui::Window::new("uxn").show(ctx, |ui| {
+                        let mut cycle = uxn.lock().unwrap();
 
-                egui::Window::new("uxn").show(ctx, |ui| {
-                    let mut cycle = uxn.lock().unwrap();
+                        let screen_vector_addr = cycle.screen.vector();
 
-                    let screen_vector_addr = cycle.screen.vector();
+                        // return a result
+                        // if we have an error, show an specific gui
+                        cycle.eval(screen_vector_addr);
 
-                    cycle.eval(screen_vector_addr);
+                        if cycle.screen.change {
+                            cycle.screen.generate(ctx);
+                            cycle.screen.change = false;
+                        }
 
-                    if cycle.screen.change {
-                        cycle.screen.generate(ctx);
-                        cycle.screen.change = false;
-                    }
+                        let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
 
-                    let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
+                        ui.image(texture, texture.size_vec2());
+                    });
 
-                    ui.image(texture, texture.size_vec2());
+                    egui::Window::new("debug").show(ctx, |ui| {
+                        ctx.texture_ui(ui);
+                    });
                 });
-
-                egui::Window::new("debug").show(ctx, |ui| {
-                    ctx.texture_ui(ui);
-                });
-
-
-                });
-
             },
         )
     }

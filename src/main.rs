@@ -1,7 +1,7 @@
-mod uxn;
-mod system;
 mod devices;
 mod operations;
+mod system;
+mod uxn;
 
 use nih_plug::prelude::*;
 

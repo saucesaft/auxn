@@ -1,5 +1,5 @@
+use crate::devices::*;
 use crate::system::{Device, Opcode};
-use crate:: devices::*;
 use std::sync::mpsc;
 
 use arrayvec::ArrayVec;
@@ -7,8 +7,8 @@ use arrayvec::ArrayVec;
 const MAX_INSTR: u8 = 0x1f;
 
 pub struct UXN {
-    pub ram: ArrayVec::<u8, 0x13000>,
-    
+    pub ram: ArrayVec<u8, 0x13000>,
+
     pub wst: usize,
     pub rst: usize,
     pub dev: usize,
@@ -39,7 +39,7 @@ impl UXN {
     pub fn new(w: u32, h: u32) -> Self {
         UXN {
             ram: ArrayVec::<u8, 0x13000>::from([0; 0x13000]),
-            
+
             wst: 0x10000,
             rst: 0x11000,
             dev: 0x12000,
@@ -75,15 +75,15 @@ impl UXN {
     }
 
     pub fn wst_get(&self, index: usize) -> u8 {
-        return self.ram[self.wst + index]
+        return self.ram[self.wst + index];
     }
 
     pub fn rst_get(&self, index: usize) -> u8 {
-        return self.ram[self.rst + index]
+        return self.ram[self.rst + index];
     }
 
     pub fn dev_get(&self, index: usize) -> u8 {
-        return self.ram[self.dev + index]
+        return self.ram[self.dev + index];
     }
 
     pub fn get(&self, index: usize) -> u8 {
@@ -92,7 +92,7 @@ impl UXN {
 
     pub fn dst_get(&self, index: usize) -> u8 {
         return self.ram[self.dst + index];
-    } 
+    }
 
     pub fn ptr(&self) -> u8 {
         return self.get(0xff);
@@ -134,8 +134,11 @@ impl UXN {
     }
 
     fn reset(&mut self) {
+        // reset the pointers
         self.ram[self.src + 0xff] = 0;
+        self.ram[self.dst + 0xff] = 0;
 
+        // return to the default values
         self.halted = false;
         self.limit = 0x40000;
 
@@ -171,11 +174,10 @@ impl UXN {
     }
 
     pub fn step(&mut self, mut pc: usize) -> usize {
-
         let debug = false;
-    
+
         let instr = self.ram[pc];
-        pc = pc.wrapping_add(1);
+        pc = pc + 1;
 
         if instr == 0 {
             self.halted = true;
@@ -219,38 +221,38 @@ impl UXN {
         match Opcode::try_from(instr & MAX_INSTR) {
             Ok(Opcode::LIT) => {
                 if debug {
-                    println!("-> LIT");
+                    println!("-> LIT - r2: {}", self.r2);
                 }
 
-                let out = self.PEEK(pc);
+                // println!("ppek: {:?}", self.PEEK(pc));
 
-                self.PUSH( out );
-                pc = pc.wrapping_add(1).wrapping_add(self.bs);
+                self.PUSH(self.PEEK(pc));
+                pc = pc + (1 + self.bs);
             }
 
             Ok(Opcode::INC) => {
                 if debug {
-                    println!("-> INC");    
+                    println!("-> INC - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP();
 
-                self.PUSH( x.wrapping_add(1).into() );
+                self.PUSH(x.wrapping_add(1).into());
             }
 
             Ok(Opcode::POP) => {
                 if debug {
-                    println!("-> POP");    
+                    println!("-> POP - r2: {}", self.r2);
                 }
-                
+
                 self.POP();
             }
 
             Ok(Opcode::NIP) => {
                 if debug {
-                    println!("-> NIP");    
+                    println!("-> NIP - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.POP();
                 self.PUSH(self.a.into());
@@ -258,9 +260,9 @@ impl UXN {
 
             Ok(Opcode::SWP) => {
                 if debug {
-                    println!("-> SWP");    
+                    println!("-> SWP - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.a);
@@ -269,9 +271,9 @@ impl UXN {
 
             Ok(Opcode::ROT) => {
                 if debug {
-                    println!("-> ROT");    
+                    println!("-> ROT - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.c = self.POP();
@@ -282,9 +284,9 @@ impl UXN {
 
             Ok(Opcode::DUP) => {
                 if debug {
-                    println!("-> DUP");    
+                    println!("-> DUP - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.PUSH(self.a);
                 self.PUSH(self.a);
@@ -292,21 +294,21 @@ impl UXN {
 
             Ok(Opcode::OVR) => {
                 if debug {
-                    println!("-> OVR");    
+                    println!("-> OVR - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.b);
                 self.PUSH(self.a);
-                self.PUSH(self.b);    
+                self.PUSH(self.b);
             }
 
             Ok(Opcode::EQU) => {
                 if debug {
-                    println!("-> EQU");    
+                    println!("-> EQU - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 if self.b == self.a {
@@ -318,9 +320,9 @@ impl UXN {
 
             Ok(Opcode::NEQ) => {
                 if debug {
-                    println!("-> NEQ");    
+                    println!("-> NEQ - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 if self.b != self.a {
@@ -332,9 +334,9 @@ impl UXN {
 
             Ok(Opcode::GTH) => {
                 if debug {
-                    println!("-> GTH");    
+                    println!("-> GTH - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 if self.b > self.a {
@@ -346,9 +348,9 @@ impl UXN {
 
             Ok(Opcode::LTH) => {
                 if debug {
-                    println!("-> LTH");    
+                    println!("-> LTH - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 if self.b < self.a {
@@ -360,18 +362,18 @@ impl UXN {
 
             Ok(Opcode::JMP) => {
                 if debug {
-                    println!("-> JMP");    
+                    println!("-> JMP - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP().into();
-                pc = self.JUMP( x, pc );
+                pc = self.JUMP(x, pc);
             }
 
             Ok(Opcode::JCN) => {
                 if debug {
-                    println!("-> JCN");    
+                    println!("-> JCN - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 if self.POP8() != 0 {
                     pc = self.JUMP(self.a.into(), pc);
@@ -380,19 +382,19 @@ impl UXN {
 
             Ok(Opcode::JSR) => {
                 if debug {
-                    println!("-> JSR");    
+                    println!("-> JSR - r2: {}", self.r2);
                 }
-                
+
                 self.DST_PUSH16(pc.try_into().unwrap());
                 let x = self.POP().into();
-                pc = self.JUMP( x, pc );
+                pc = self.JUMP(x, pc);
             }
 
             Ok(Opcode::STH) => {
                 if debug {
-                    println!("-> STH");    
+                    println!("-> STH - r2: {}", self.r2);
                 }
-                
+
                 if self.r2 {
                     let x = self.POP16();
                     self.DST_PUSH16(x);
@@ -404,18 +406,18 @@ impl UXN {
 
             Ok(Opcode::LDZ) => {
                 if debug {
-                    println!("-> LDZ");    
+                    println!("-> LDZ - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP8();
-                self.PUSH( self.PEEK( x.into() ) );
+                self.PUSH(self.PEEK(x.into()));
             }
 
             Ok(Opcode::STZ) => {
                 if debug {
-                    println!("-> STZ");    
+                    println!("-> STZ - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP8();
                 let y = self.POP();
 
@@ -424,19 +426,19 @@ impl UXN {
 
             Ok(Opcode::LDR) => {
                 if debug {
-                    println!("-> LDR");    
+                    println!("-> LDR - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP8();
 
-                self.PUSH( self.PEEK( pc.wrapping_add( self.rel( x.into() ) ) ) );
+                self.PUSH(self.PEEK(pc.wrapping_add(self.rel(x.into()))));
             }
 
             Ok(Opcode::STR) => {
                 if debug {
-                    println!("-> STR");    
+                    println!("-> STR - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP8();
                 let y = self.POP();
 
@@ -445,19 +447,19 @@ impl UXN {
 
             Ok(Opcode::LDA) => {
                 if debug {
-                    println!("-> LDA");    
+                    println!("-> LDA - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP16();
 
-                self.PUSH( self.PEEK( x.into() ) );
+                self.PUSH(self.PEEK(x.into()));
             }
 
             Ok(Opcode::STA) => {
                 if debug {
-                    println!("-> STA");    
+                    println!("-> STA - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP16();
                 let y = self.POP();
 
@@ -466,30 +468,33 @@ impl UXN {
 
             Ok(Opcode::DEI) => {
                 if debug {
-                    println!("-> DEI");    
+                    println!("-> DEI - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP8();
 
-                self.PUSH( self.DEVR( x.into() ).into() );
+                self.PUSH(self.DEVR(x.into()).into());
             }
 
             Ok(Opcode::DEO) => {
                 if debug {
-                    println!("-> DEO");    
+                    println!("-> DEO - r2: {}", self.r2);
                 }
-                
+
                 let x = self.POP8();
                 let y = self.POP();
+
+                // println!("DEO VALUE: {:?} - r2: {}", y, self.r2);
+                // println!("------------------");
 
                 self.DEVW(x.into(), y);
             }
 
             Ok(Opcode::ADD) => {
                 if debug {
-                    println!("-> ADD");    
+                    println!("-> ADD - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.b.wrapping_add(self.a));
@@ -497,9 +502,9 @@ impl UXN {
 
             Ok(Opcode::SUB) => {
                 if debug {
-                    println!("-> SUB");    
+                    println!("-> SUB - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.b.wrapping_sub(self.a));
@@ -507,9 +512,9 @@ impl UXN {
 
             Ok(Opcode::MUL) => {
                 if debug {
-                    println!("-> MUL");    
+                    println!("-> MUL - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.b.wrapping_mul(self.a));
@@ -517,7 +522,7 @@ impl UXN {
 
             Ok(Opcode::DIV) => {
                 if debug {
-                    println!("-> DIV");    
+                    println!("-> DIV - r2: {}", self.r2);
                 }
 
                 self.a = self.POP();
@@ -528,14 +533,13 @@ impl UXN {
                 }
 
                 self.PUSH(self.b.wrapping_div(self.a));
-                
             }
 
             Ok(Opcode::AND) => {
                 if debug {
-                    println!("-> AND");    
+                    println!("-> AND - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.b & self.a);
@@ -543,9 +547,9 @@ impl UXN {
 
             Ok(Opcode::ORA) => {
                 if debug {
-                    println!("-> ORA");    
+                    println!("-> ORA - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.b | self.a);
@@ -553,9 +557,9 @@ impl UXN {
 
             Ok(Opcode::EOR) => {
                 if debug {
-                    println!("-> EOR");    
+                    println!("-> EOR - r2: {}", self.r2);
                 }
-                
+
                 self.a = self.POP();
                 self.b = self.POP();
                 self.PUSH(self.b ^ self.a);
@@ -563,14 +567,13 @@ impl UXN {
 
             Ok(Opcode::SFT) => {
                 if debug {
-                    println!("-> SFT");    
+                    println!("-> SFT - r2: {}", self.r2);
                 }
 
                 self.a = self.POP8().into();
                 self.b = self.POP();
 
-                self.PUSH( self.b >> (self.a & 0x0f) << ((self.a & 0xf0) >> 4) );
-                
+                self.PUSH(self.b >> (self.a & 0x0f) << ((self.a & 0xf0) >> 4));
             }
 
             Err(_) => {
@@ -578,23 +581,21 @@ impl UXN {
             }
         }
 
-            // println!("ptr: {}", self.ptr());
+        // println!("ptr: {}", self.ptr());
 
-            // let wst = &self.ram[self.wst..self.wst+20];
-            // let rst = &self.ram[self.rst..self.rst+20];
+        // let wst = &self.ram[self.wst..self.wst+20];
+        // let rst = &self.ram[self.rst..self.rst+20];
 
-            // println!("pc: {:#x?} instr: {:#x?}", pc, instr & MAX_INSTR);
-            // println!("rr: {:?} r2: {:?}", self.rr, self.r2);
-            // println!("wst: {:x?}", wst);
-            // println!("rst: {:x?}", rst);
-            // println!("debug_out: {}\n", debug_out as u8);
+        // println!("pc: {:#x?} instr: {:#x?}", pc, instr & MAX_INSTR);
+        // println!("rr: {:?} r2: {:?}", self.rr, self.r2);
+        // println!("wst: {:x?}", wst);
+        // println!("rst: {:x?}", rst);
+        // println!("debug_out: {}\n", debug_out as u8);
 
-            // if pc >= 0x1e0 {
-            //     break
-            // }
+        // if pc >= 0x1e0 {
+        //     break
+        // }
 
         return pc;
-
     }
-
 }
