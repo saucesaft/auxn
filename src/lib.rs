@@ -136,9 +136,13 @@ impl Plugin for Gain {
             // advance into the gui and show that it is booting up
             setup.eval(0x100);
 
-            // we asume the user did define the system colors
+            // we set the new texture size, depending
+            // if yes or not the user configured a custom size
+            setup.resize();
+
+            // we also asume the user did define the system colors
             // so we set the background color here
-            setup.bg_color()
+            setup.bg_color();
         }
 
         let params = self.params.clone();
@@ -150,7 +154,11 @@ impl Plugin for Gain {
             move |_, _| {},
             move |ctx, setter, _state| {
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    egui::Window::new("uxn").show(ctx, |ui| {
+                    egui::Window::new("uxn")
+                    // .resize(|r| {
+                    //     r.fixed_size(egui::Vec2::new(20.0, 20.0))
+                    // })
+                    .show(ctx, |ui| {
                         let mut cycle = uxn.lock().unwrap();
 
                         let screen_vector_addr = cycle.screen.vector();
@@ -158,6 +166,10 @@ impl Plugin for Gain {
                         // return a result
                         // if we have an error, show an specific gui
                         cycle.eval(screen_vector_addr);
+
+                        // if ui.button("resize").clicked() {
+                        //     cycle.screen.resize();
+                        // }
 
                         if cycle.screen.redraw {
                             cycle.screen.generate(ctx);
@@ -167,6 +179,7 @@ impl Plugin for Gain {
                         let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
 
                         ui.image(texture, texture.size_vec2());
+
                     });
 
                     egui::Window::new("debug").show(ctx, |ui| {

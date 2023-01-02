@@ -2,7 +2,7 @@ use crate::devices::*;
 use crate::system::{Device, Opcode};
 use std::sync::mpsc;
 
-use nih_plug_egui::egui::{Color32};
+use nih_plug_egui::egui::{Color32, ColorImage};
 
 use arrayvec::ArrayVec;
 
@@ -135,6 +135,31 @@ impl UXN {
             if *p == Color32::TRANSPARENT {
                 *p = self.system.color0;
             }
+        }
+    }
+
+    pub fn resize(&mut self) {
+        let w = {
+            let a = (self.ram[self.dev + 0x22] as i32) << 8;
+            let b = (self.ram[self.dev + 0x23] as i32);
+
+            (a+b) as usize
+        };
+
+        let h = {
+            let a = (self.ram[self.dev + 0x24] as i32) << 8;
+            let b = (self.ram[self.dev + 0x25] as i32);
+
+            (a+b) as usize
+        };
+
+        // if user did specify sizes
+        if w != 0 || h != 0 {
+            self.screen.fg = ColorImage::new([w, h], Color32::TRANSPARENT);
+            self.screen.bg = ColorImage::new([w, h], Color32::TRANSPARENT);
+
+            self.screen.width = w as u32;
+            self.screen.height = h as u32;
         }
     }
 

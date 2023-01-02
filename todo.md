@@ -11,7 +11,7 @@
 	-[ ] Overflow
 	-[ ] Division
 	-[ ] No Instruction
--[ ] Window size changing implemented as an egui window
+-[x] Window size changing implemented as an egui window
 	-[ ] Update until baseview supports resizing
 -[ ] Video
 	-[x] Vector

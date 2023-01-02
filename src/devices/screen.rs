@@ -2,8 +2,8 @@ use crate::uxn::UXN;
 use nih_plug_egui::egui::{Color32, ColorImage, Context, TextureHandle};
 
 pub struct ScreenDevice {
-    width: u32,
-    height: u32,
+    pub width: u32,
+    pub height: u32,
 
     x: u16,
     y: u16,
@@ -60,6 +60,7 @@ impl ScreenDevice {
 
 pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
     let rel = port & 0x0F;
+    let section = port & 0xF0;
 
     match rel {
         // set the vector address
@@ -72,15 +73,16 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             }
         }
 
-        // set screen width - no resizing support yet
-        0x3 => {
-            println!("screen set width");
-        }
+        // register - set screen width
+        0x2 | 0x3 => {}
 
-        // set screen height - no resizing support yet
-        0x5 => {
-            println!("screen set height");
-        }
+        // register - set screen height
+        0x4 | 0x5 => {}
+
+        // register auto-mode
+        // we will handle this accordingly
+        // in the pixel or sprite cases
+        0x6 => {}
 
         // set x coordinate
         0x8 | 0x9 => {
@@ -123,6 +125,14 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             		}
 
             	}
+            }
+
+            if (uxn.dev_get(section + 0x6) & 0x01) != 0 {
+            	println!("auto x+1");
+            }
+
+            if (uxn.dev_get(section + 0x6) & 0x02) != 0 {
+            	println!("auto y+1");
             }
         }
 
