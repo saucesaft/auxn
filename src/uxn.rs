@@ -134,6 +134,8 @@ impl UXN {
     }
 
     fn reset(&mut self) {
+        self.ram[self.src + 0xff] = 0;
+
         self.halted = false;
         self.limit = 0x40000;
 
@@ -214,15 +216,15 @@ impl UXN {
             self.pk = self.ptr() as usize;
         }
 
-        // println!("rk: {:?}", self.rk);
-
         match Opcode::try_from(instr & MAX_INSTR) {
             Ok(Opcode::LIT) => {
                 if debug {
-                    println!("-> LIT");    
+                    println!("-> LIT");
                 }
 
-                self.PUSH( self.PEEK(pc));
+                let out = self.PEEK(pc);
+
+                self.PUSH( out );
                 pc = pc.wrapping_add(1).wrapping_add(self.bs);
             }
 

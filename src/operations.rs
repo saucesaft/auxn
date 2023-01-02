@@ -1,10 +1,9 @@
 use crate::uxn::UXN;
-// use crate::system::Stack;
 
 impl UXN {
 	pub fn rel(&self, val: usize) -> usize {
 		if val > 0x80 {
-			val.wrapping_sub(256)
+			val - 256 // change to wrappin_sub ?
 		} else {
 			val
 		}
@@ -30,7 +29,7 @@ impl UXN {
 
 	pub fn DEVR(&self, port: usize) -> u8 {
 		if self.r2 {
-			return self.DEI(port).wrapping_shl(8) + self.DEI(port + 1);
+			return (((self.DEI(port) as i32) << 8) + (self.DEI(port + 1) as i32)) as u8;
 		} else {
 			return self.DEI(port)
 		}
@@ -39,9 +38,9 @@ impl UXN {
 	pub fn DEVW(&mut self, port: usize, val: u16) {
 		if self.r2 {
 			self.DEO(port, ((val as i32) >> 8) as u8);
-			self.DEO((port + 1) & 0xff, (val & 0xff) as u8);
+			self.DEO(port + 1, (val & 0xff) as u8);
 		} else {
-			self.DEO(port, (val & 0xff) as u8);
+			self.DEO(port, val as u8);
 		}
 	}
 
@@ -51,7 +50,7 @@ impl UXN {
 
 	pub fn POKE(&mut self, addr: usize, val: u16) {
 		if self.r2 {
-			self.ram[addr] = val.wrapping_shr(8) as u8;
+			self.ram[addr] = ((val as i32) >> 8) as u8;
 			self.ram[addr + 1] = val as u8;
 		} else {
 			self.POKE8(addr, val as u8);
@@ -92,6 +91,7 @@ impl UXN {
 		if self.ptr() == 0xff {
 			panic!("OVERFLOW");
 		}
+
 		let index = self.inc();
 		self.ram[self.src + index] = s;
 	}
@@ -101,18 +101,17 @@ impl UXN {
             self.PUSH16(s);
         } else {
             self.PUSH8(s as u8);
-        }		
+        }
 	}
 
 	pub fn POP16(&mut self) -> u16 {
 		let a = self.POP8() as i32;
 		let b = (self.POP8() as i32) << 8;
 
-		return (a + b) as u16
+		return (a + b) as u16;
 	}
 
 	pub fn POP8(&mut self) -> u8 {
-
 		if self.ptr() == 0x00 {
 			panic!("UNDERFLOW");
 		}

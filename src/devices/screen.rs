@@ -11,10 +11,8 @@ pub struct ScreenDevice {
 	width: u32,
 	height: u32,
 
-	x: u16,
-	y: u16,
-	// color: i8,
-	// layer: i8,
+	// x: u16,
+	// y: u16,
 
 	pub buffer: ColorImage,
 	pub display: Option<TextureHandle>,
@@ -31,8 +29,8 @@ impl ScreenDevice {
 			height: h,
 
 			// coordinates to position the next thing to draw
-			x: 0,
-			y: 0,
+			// x: 0,
+			// y: 0,
 
 			buffer: ColorImage::new([w as usize, h as usize], Color32::BLACK),
 			display: None::<TextureHandle>,
@@ -84,31 +82,56 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 				println!("screen set height");
 		}
 
-		// set x coordinate
-		0x8 | 0x9 => {
-			if rel == 0x9 {
-				let a = (uxn.ram[uxn.dev + port-1] as i32) << 8;
-				let b = (uxn.ram[uxn.dev + port] as i32);
+		0x8 | 0x9 | 0xa | 0xb => {}
 
-				uxn.screen.x = (a + b) as u16;
-			}
-		}
+		// // set x coordinate
+		// 0x8 | 0x9 => {
+		// 	if rel == 0x9 {
+		// 		let a = (uxn.ram[uxn.dev + port-1] as i32) << 8;
+		// 		let b = (uxn.ram[uxn.dev + port] as i32);
 
-		// set y coordinate
-		0xa | 0xb => {
-			if rel == 0xb {
-				let a = (uxn.ram[uxn.dev + port-1] as i32) << 8;
-				let b = (uxn.ram[uxn.dev + port] as i32);
+		// 		uxn.screen.x = (a + b) as u16;
 
-				uxn.screen.y = (a + b) as u16;
-			}
-		}
+		// 		println!("set-x: {:?}", (a + b) as u16);
+		// 	}
+		// }
+
+		// // set y coordinate
+		// 0xa | 0xb => {
+		// 	if rel == 0xb {
+		// 		let a = (uxn.ram[uxn.dev + port-1] as i32) << 8;
+		// 		let b = (uxn.ram[uxn.dev + port] as i32);
+
+		// 		uxn.screen.y = (a + b) as u16;
+		// 	}
+		// }
 
 		// write a pixel to the screen
 		0xe => {
-				let x = uxn.screen.x as usize;
-				let y = uxn.screen.y as usize;
+				// let x = uxn.screen.x as usize;
+				// let y = uxn.screen.y as usize;
+
+				let x = {
+					let a = (uxn.ram[uxn.dev + 0x28] as i32) << 8;
+					let b = (uxn.ram[uxn.dev + 0x28+1] as i32);
+
+					(a + b) as usize
+				};
+
+				let y = {
+					let a = (uxn.ram[uxn.dev + 0x2a] as i32) << 8;
+					let b = (uxn.ram[uxn.dev + 0x2a+1] as i32);
+
+					(a + b) as usize
+				};
+
 				let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
+
+				// uxn.screen.buffer[(0, 0)] = color;
+				// uxn.screen.buffer[(511, 319)] = color;
+
+				println!("size: {:?}", uxn.screen.buffer.size);
+				println!("x: {:?}", x);
 
 				uxn.screen.buffer[(x, y)] = color;
 				uxn.screen.change = true;

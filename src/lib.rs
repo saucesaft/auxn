@@ -16,6 +16,8 @@ use devices::DrawOperation;
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
 const PEAK_METER_DECAY_MS: f64 = 150.0;
 
+// 512 * 320
+
 const WIDTH: u32 = 64 * 8;
 const HEIGHT: u32 = 40 * 8;
 
@@ -62,7 +64,8 @@ impl Default for Gain {
 impl Default for GainParams {
     fn default() -> Self {
         Self {
-            editor_state: EguiState::from_size(WIDTH, HEIGHT),
+            // editor_state: EguiState::from_size(WIDTH, HEIGHT),
+            editor_state: EguiState::from_size(600, 600),
 
             // See the main gain example for more details
             gain: FloatParam::new(
@@ -80,8 +83,6 @@ impl Default for GainParams {
             .with_string_to_value(formatters::s2v_f32_gain_to_db()),
 
             some_int: IntParam::new("Something", 3, IntRange::Linear { min: 0, max: 3 }),
-
-            // pc: IntParam::new("Working Instruction", 0x100, IntRange::Linear { min: 0, max: i32::MAX }),
         }
     }
 }
@@ -134,7 +135,7 @@ impl Plugin for Gain {
             // - maybe move this function to the init?
             // i have an slight asumption this will run everytime you open the gui
             // - run it as another thread but have it return a bool
-            // that will change when the start is ready but let's the app
+            // that will change when the start is ready but let the app
             // advance into the gui and show that it is booting up
             setup.eval(0x100);
         }
@@ -149,8 +150,7 @@ impl Plugin for Gain {
             move |ctx, setter, _state| {
                 egui::CentralPanel::default().show(ctx, |ui| {
 
-                    let painter = ui.painter();
-
+                egui::Window::new("uxn").show(ctx, |ui| {
                     let mut cycle = uxn.lock().unwrap();
 
                     let screen_vector_addr = cycle.screen.vector();
@@ -163,7 +163,9 @@ impl Plugin for Gain {
                     }
 
                     let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
+
                     ui.image(texture, texture.size_vec2());
+                });
 
                 egui::Window::new("debug").show(ctx, |ui| {
                     ctx.texture_ui(ui);
