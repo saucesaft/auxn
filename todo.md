@@ -18,7 +18,7 @@
 	-[ ] Sprites
 	-[ ] Auto mode
 	-[ ] Effects and blending
-	-[ ] Handle bg and fg properly
+	-[x] Handle bg and fg properly
 	-[x] Set background color at first
 -[ ] Mouse
 -[ ] Controller

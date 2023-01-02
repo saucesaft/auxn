@@ -123,7 +123,6 @@ impl Plugin for Gain {
             let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
 
             let mut setup = uxn.lock().unwrap();
-            // setup.pc = 0x100;
 
             setup.load(rom);
 

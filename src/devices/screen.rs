@@ -7,7 +7,10 @@ pub struct ScreenDevice {
 
     x: u16,
     y: u16,
-    pub buffer: ColorImage,
+
+    pub fg: ColorImage,
+    pub bg: ColorImage,
+
     pub display: Option<TextureHandle>,
 
     pub vector: usize,
@@ -25,7 +28,9 @@ impl ScreenDevice {
             x: 0,
             y: 0,
 
-            buffer: ColorImage::new([w as usize, h as usize], Color32::TRANSPARENT),
+            fg: ColorImage::new([w as usize, h as usize], Color32::TRANSPARENT),
+            bg: ColorImage::new([w as usize, h as usize], Color32::TRANSPARENT),
+            
             display: None::<TextureHandle>,
 
             vector: 0,
@@ -36,7 +41,15 @@ impl ScreenDevice {
 
     // load the buffer to memory
     pub fn generate(&mut self, ctx: &Context) {
-        self.display = Some(ctx.load_texture("buffer", self.buffer.clone(), Default::default()));
+    	let mut mix = self.bg.clone();
+
+    	for (i, p) in self.fg.pixels.iter().enumerate() {
+    		if *p != Color32::TRANSPARENT {
+    			mix.pixels[i] = *p;
+    		}
+    	}
+
+        self.display = Some(ctx.load_texture("buffer", mix, Default::default()));
     }
 
     // return the screen vector
@@ -94,13 +107,21 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             let x = uxn.screen.x as usize;
             let y = uxn.screen.y as usize;
             let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
+            let layer = uxn.ram[uxn.dev + port] & 0x40;
 
             // check that the coordiantes are actually aplicable to our screen
             // if not, we simply ignore them, this is a default behaviour
             if 0 < x && x < (uxn.screen.width as usize) {
             	if 0 < y && y < (uxn.screen.height as usize) {
-	            	uxn.screen.buffer[(x, y)] = color;
-	            	uxn.screen.redraw = true;
+
+            		if layer == 0x40 { // write to fg
+		            	uxn.screen.fg[(x, y)] = color;
+		            	uxn.screen.redraw = true;
+            		} else if layer == 0x00 { // write to bg
+		            	uxn.screen.bg[(x, y)] = color;
+		            	uxn.screen.redraw = true;
+            		}
+
             	}
             }
         }

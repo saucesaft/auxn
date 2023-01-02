@@ -12,10 +12,10 @@ pub struct SystemDevice {
 impl SystemDevice {
     pub fn new() -> Self {
         SystemDevice {
-            color0: Color32::WHITE,
-            color1: Color32::LIGHT_GRAY,
-            color2: Color32::DARK_GRAY,
-            color3: Color32::BLACK,
+            color0: Color32::BLACK,
+            color1: Color32::DARK_GRAY,
+            color2: Color32::LIGHT_GRAY,
+            color3: Color32::WHITE,
         }
     }
 
