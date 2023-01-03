@@ -121,7 +121,11 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../pixel.rom").to_vec();
             // let rom = include_bytes!("../../uxn/line.rom").to_vec();
             // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
+            
+            // demos //
             let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/polycat.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/dvd.rom").to_vec();
 
             let mut setup = uxn.lock().unwrap();
 
@@ -156,9 +160,7 @@ impl Plugin for Gain {
             move |ctx, setter, _state| {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     egui::Window::new("uxn")
-                    // .resize(|r| {
-                    //     r.fixed_size(egui::Vec2::new(20.0, 20.0))
-                    // })
+                    .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 20.0))
                     .show(ctx, |ui| {
                         let mut cycle = uxn.lock().unwrap();
 
@@ -183,7 +185,9 @@ impl Plugin for Gain {
 
                     });
 
-                    egui::Window::new("debug").show(ctx, |ui| {
+                    egui::Window::new("debug")
+                    .anchor(egui::Align2::CENTER_BOTTOM, egui::Vec2::new(0.0, -20.0))
+                    .show(ctx, |ui| {
                         ctx.texture_ui(ui);
                     });
                 });

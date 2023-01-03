@@ -1,6 +1,12 @@
 use crate::uxn::UXN;
 
 impl UXN {
+
+	pub fn dev_poke(&mut self, addr: usize, val: u16) {
+		self.ram[self.dev + addr] = ((val as i32) >> 8) as u8;
+		self.ram[self.dev + addr + 1] = val as u8;
+	}
+
     pub fn rel(&self, val: usize) -> usize {
         if val > 0x80 {
             val.wrapping_sub(256)
