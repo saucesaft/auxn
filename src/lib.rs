@@ -127,8 +127,10 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
             
             // demos //
-            let rom = include_bytes!("../../uxn/sprite_test.rom").to_vec();
-            // let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
+            // PASSING
+            // let rom = include_bytes!("../../uxn/sprite_test.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/screen.rom").to_vec();
+            let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
             // let rom = include_bytes!("../../uxn/polycat.rom").to_vec();
             // let rom = include_bytes!("../../uxn/dvd.rom").to_vec();
 
@@ -159,7 +161,9 @@ impl Plugin for Gain {
         let peak_meter = self.peak_meter.clone();
 
         let memory_widget = Mutex::new(
-            MemoryEditor::new().with_address_range("All", 0..0x13000)
+            MemoryEditor::new()
+                .with_address_range("Program", 0x100..0x13000)
+                .with_address_range("Zero Page", 0..0x100)
             );
 
         {

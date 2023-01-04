@@ -172,8 +172,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             let layer = uxn.ram[uxn.dev + port] & 0x40;
             let mut addr = uxn.screen.addr;
 
-            // println!("addr: {:#x?}", &uxn.ram[addr..addr+16]);
-
+            // println!("addr: {:#x?}", addr);
             // log::info!("addr {:?}", uxn.ram[addr+13]);
 
             let twobpp = {
@@ -184,9 +183,16 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             	}
             };
 
+            // println!("twobpp: {:?}", twobpp);
+
             let n = (uxn.dev_get(section + 0x6) >> 4) as usize;
             let dx = ((uxn.dev_get(section + 0x6) & 0x01) << 3) as usize;
             let dy = ((uxn.dev_get(section + 0x6) & 0x02) << 2) as usize;
+
+            // println!("n: {:?}", n);
+            // println!("dx: {:?}", dx);
+            // println!("dy: {:?}", dy);
+            // println!("----------");
 
             if addr > 0x10000 - ((n + 1) << (3 + twobpp)) as usize {
             	return
@@ -201,11 +207,11 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             	let opaque: u8 = blending[4][(uxn.dev_get(port) & 0xf) as usize];
 
-            	// println!("opaque: {}", opaque);
+            	// println!("opaque: {:?}", opaque);
 
             	while v < 8 {
 
-            		// println!("v: {}", v);
+            		// println!("v: {:?}", v);
 
             		let two = {
             			if twobpp == 1 {
@@ -215,11 +221,18 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             			}
             		};
 
-            		let mut c: u16 = (uxn.ram[addr + v] | ((two as i32) << 8) as u8) as u16;
+            		// println!("two: {:?}", two);
 
+            		let mut c: u16 = (uxn.ram[addr + v] as i32 | ((two as i32) << 8)) as u16;
+
+            		h = 7;
             		while h >= 0 {
 
-            			let ch: u8 = ((c & 1) | ((c >> 7) & 2)) as u8;
+            			// println!("h: {:?}", h);
+
+            			let ch: u8 = (((c as i32) & 1) | (((c as i32) >> 7) & 2)) as u8;
+
+            			// println!("ch: {:?}", ch);
 
             			if opaque != 0 || ch != 0 {
 
@@ -257,21 +270,34 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             			}
 
-            			h =- 1;
-            			c = c >> 1;
+            			h -= 1;
+            			c = ((c as i32) >> 1) as  u16;
             		}
 
             		v += 1;
             	}
 
-            	addr += ((uxn.dev_get(section + 0x6) & 0x04) << (1 + twobpp)) as usize;
+            	addr += ((uxn.dev_get(section + 0x6) & 0x4) << (1 + twobpp)) as usize;
+
+            	// println!("addr: {:?}", addr);
+            	// println!("first: {:?} twobpp: {:?}", (uxn.dev_get(section + 0x6) & 0x4), twobpp);
+            	// println!("second {:?}", (((uxn.dev_get(section + 0x6) & 0x4) as i32) << (1 + twobpp) as i32));
 
             	i += 1;
             }
 
+            // println!("addr: {:?}", addr);
+            // println!("addr: {:?}", addr as u16);
+            // println!("----");
+
             uxn.dev_poke(section + 0xc, addr as u16);
+            uxn.screen.addr = addr;
+
             uxn.dev_poke(section + 0x8, (x + dx) as u16);
+            uxn.screen.x = (x + dx) as u16;
+
             uxn.dev_poke(section + 0xa, (y + dy) as u16);
+            uxn.screen.y = (y + dy) as u16;
 
         }
 
