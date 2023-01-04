@@ -6,22 +6,35 @@
 	- [x] memory.rom
 	- [x] stack.rom
 	- [x] tests.rom
--[ ] Replace all panics with warnings in the frontend
-	-[ ] Underflow
-	-[ ] Overflow
-	-[ ] Division
-	-[ ] No Instruction
--[x] Window size changing implemented as an egui window
-	-[ ] Update until baseview supports resizing
 -[ ] Video
 	-[x] Vector
 	-[ ] Sprites
 	-[ ] Auto mode
-	-[ ] Effects and blending
+	-[x] Effects and blending
 	-[x] Handle bg and fg properly
 	-[x] Set background color at first
+-[ ] Clean Up
+	-[ ] Refactor stacks into their own classes
+	-[ ] Resolve warnings
+		- [ ] Unused dependencies
+		- [ ] UPPERCASE FUNCTIONS
 -[ ] Mouse
 -[ ] Controller
 -[ ] Audio
 -[ ] Midi
--[ ] Refactor stacks into their own classes
+-[ ] QOL
+	-[ ] Change name and logo
+	-[ ] Hide debug menu for final release
+		-[ ] Maybe only maintain it in standalone mode
+		-[ ] Debug mode inspired by https://github.com/randrew/uxn32
+	-[ ] Replace all panics with warnings in the frontend
+		-[ ] Underflow
+		-[ ] Overflow
+		-[ ] Division
+		-[ ] No Instruction
+	-[x] Window size changing implemented as an egui window
+		-[ ] Update until baseview supports resizing
+		-[ ] Figure out an approach that could work when resizing after drawing
+			-[ ] Check if this is even supported on the original uxn emulator
+	-[ ] Set-up inputs and outputs directly from egui
+	-[ ] Custom parameters to be used in uxn

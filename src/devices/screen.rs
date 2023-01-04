@@ -51,15 +51,41 @@ impl ScreenDevice {
 
     // load the buffer to memory
     pub fn generate(&mut self, ctx: &Context) {
-    	let mut mix = self.bg.clone();
+    	let mut buffer = self.bg.clone();
 
     	for (i, p) in self.fg.pixels.iter().enumerate() {
     		if *p != Color32::TRANSPARENT {
-    			mix.pixels[i] = *p;
+    			buffer.pixels[i] = *p;
     		}
     	}
 
-        self.display = Some(ctx.load_texture("buffer", mix, Default::default()));
+        self.display = Some(ctx.load_texture("buffer", buffer, Default::default()));
+    }
+
+    pub fn pixel(&mut self, x: usize, y: usize, color: Color32, layer: u8) {
+        // check that the coordiantes are actually aplicable to our screen
+        // if not, we simply ignore them, this is a default behaviour
+        if 0 <= x && x < (self.width as usize) {
+        	if 0 <= y && y < (self.height as usize) {
+
+        		 // write to the foreground buffer
+        		if layer != 0x00 {
+	            	self.fg[(x, y)] = color;
+	            	self.redraw = true;
+
+        		 // write to the background buffer
+        		} else {
+	            	self.bg[(x, y)] = color;
+	            	self.redraw = true;
+        		}
+
+        	}
+        }
+    }
+
+    pub fn resize(&mut self) {
+        self.fg = ColorImage::new([self.width as usize, self.height as usize], Color32::TRANSPARENT);
+        self.bg = ColorImage::new([self.width as usize, self.height as usize], Color32::TRANSPARENT);
     }
 
     // return the screen vector
@@ -84,10 +110,36 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
         }
 
         // register - set screen width
-        0x2 | 0x3 => {}
+        0x2 | 0x3 => {
+        	if rel == 0x3 {
+		        let w = {
+		            let a = (uxn.ram[uxn.dev + 0x22] as i32) << 8;
+		            let b = (uxn.ram[uxn.dev + 0x23] as i32);
+
+		            (a+b) as usize
+		        };
+
+		        uxn.screen.width = w as u32;
+
+		        uxn.screen.resize();
+        	}
+        }
 
         // register - set screen height
-        0x4 | 0x5 => {}
+        0x4 | 0x5 => {
+        	if rel == 0x5 {
+		        let h = {
+		            let a = (uxn.ram[uxn.dev + 0x24] as i32) << 8;
+		            let b = (uxn.ram[uxn.dev + 0x25] as i32);
+
+		            (a+b) as usize
+		        };
+
+		        uxn.screen.height = h as u32;
+
+		        uxn.screen.resize();
+        	}
+        }
 
         // register auto-mode
         // we will handle this accordingly
@@ -133,21 +185,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
             let layer = uxn.ram[uxn.dev + port] & 0x40;
 
-            // check that the coordiantes are actually aplicable to our screen
-            // if not, we simply ignore them, this is a default behaviour
-            if 0 <= x && x < (uxn.screen.width as usize) {
-            	if 0 <= y && y < (uxn.screen.height as usize) {
-
-            		if layer == 0x40 { // write to fg
-		            	uxn.screen.fg[(x, y)] = color;
-		            	uxn.screen.redraw = true;
-            		} else if layer == 0x00 { // write to bg
-		            	uxn.screen.bg[(x, y)] = color;
-		            	uxn.screen.redraw = true;
-            		}
-
-            	}
-            }
+            uxn.screen.pixel(x, y, color, layer);
 
             // POKE 16
             if (uxn.dev_get(section + 0x6) & 0x01) != 0 {
@@ -240,7 +278,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             					if (uxn.dev_get(port) & 0x10) != 0 {
             						(x + dy * i) + (7 - h) as usize
             					} else {
-            						(x + dy * i) + h as usize
+            						(x + dy * i) + (h) as usize
             					}
             				};
 
@@ -248,25 +286,13 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             					if (uxn.dev_get(port) & 0x20) != 0 {
             						(y + dx * i) + (7 - v) as usize
             					} else {
-            						(y + dx * i) + v as usize
+            						(y + dx * i) + (v) as usize
             					}
             				};
 
             				let color = uxn.system.get_color(blending[ch as usize][(uxn.dev_get(port) & 0xf) as usize]);
 
-				            if 0 <= nx && nx < (uxn.screen.width as usize) {
-				            	if 0 <= ny && ny < (uxn.screen.height as usize) {
-
-				            		if layer == 0x40 { // write to fg
-						            	uxn.screen.fg[(nx, ny)] = color;
-						            	uxn.screen.redraw = true;
-				            		} else if layer == 0x00 { // write to bg
-						            	uxn.screen.bg[(nx, ny)] = color;
-						            	uxn.screen.redraw = true;
-				            		}
-
-				            	}
-				            }
+            				uxn.screen.pixel(nx, ny, color, layer);
 
             			}
 

@@ -122,7 +122,7 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../tests.rom").to_vec();
 
             // video related //
-            // let rom = include_bytes!("../pixel.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/pixel.rom").to_vec();
             // let rom = include_bytes!("../../uxn/line.rom").to_vec();
             // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
             
@@ -150,7 +150,7 @@ impl Plugin for Gain {
 
             // we set the new texture size, depending
             // if yes or not the user configured a custom size
-            setup.resize();
+            // setup.resize();
 
             // we also asume the user did define the system colors
             // so we set the background color here
@@ -193,32 +193,29 @@ impl Plugin for Gain {
                         );
                     }
 
-                    egui::Window::new("uxn")
+
+                    let mut cycle = uxn.lock().unwrap();
+                    let screen_vector_addr = cycle.screen.vector();
+
+                    // return a result
+                    // if we have an error, show an specific gui
+                    cycle.eval(screen_vector_addr);
+
+                    if cycle.screen.redraw {
+                        cycle.screen.generate(ctx);
+                        cycle.screen.redraw = false;
+                    }
+
+                    egui::Window::new("screen")
                     .show(ctx, |ui| {
-                        let mut cycle = uxn.lock().unwrap();
-
-                        let screen_vector_addr = cycle.screen.vector();
-
-                        // return a result
-                        // if we have an error, show an specific gui
-                        cycle.eval(screen_vector_addr);
-
-                        if cycle.screen.redraw {
-                            cycle.screen.generate(ctx);
-                            cycle.screen.redraw = false;
-                        }
-
                         let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
-
                         ui.image(texture, texture.size_vec2());
-
                     });
 
-                    // egui::Window::new("debug")
-                    // .anchor(egui::Align2::CENTER_BOTTOM, egui::Vec2::new(0.0, -20.0))
-                    // .show(ctx, |ui| {
-                    //     ctx.texture_ui(ui);
-                    // });
+                    egui::Window::new("debug")
+                    .show(ctx, |ui| {
+                        ctx.texture_ui(ui);
+                    });
 
                 });
 
