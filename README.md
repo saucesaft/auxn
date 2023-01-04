@@ -1,4 +1,5 @@
 # talsnd
+[![justforfunnoreally.dev badge](https://img.shields.io/badge/justforfunnoreally-dev-9ff)](https://justforfunnoreally.dev)
 
 uxn virtual machine running inside of a audio plugin
 

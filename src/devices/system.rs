@@ -21,11 +21,11 @@ impl SystemDevice {
 
     pub fn get_color(&self, index: u8) -> Color32 {
         match index {
-            0 => return self.color0,
-            1 => return self.color1,
-            2 => return self.color2,
-            3 => return self.color3,
-            _ => return Color32::TRANSPARENT,
+            0 => self.color0,
+            1 => self.color1,
+            2 => self.color2,
+            3 => self.color3,
+            _ => Color32::TRANSPARENT,
         }
     }
 }

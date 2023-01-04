@@ -2,11 +2,11 @@ use crate::uxn::UXN;
 use nih_plug_egui::egui::{Color32, ColorImage, Context, TextureHandle};
 
 static blending: [[u8; 16]; 5] = [
-    [0,0,0,0,1,0,1,1,2,2,0,2,3,3,3,0,],
-    [0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,],
-    [1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1,],
-    [2,3,1,2,2,3,1,2,2,3,1,2,2,3,1,2,],
-    [1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,],
+    [0,0,0,0,1,0,1,1,2,2,0,2,3,3,3,0],
+    [0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3],
+    [1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1],
+    [2,3,1,2,2,3,1,2,2,3,1,2,2,3,1,2],
+    [1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],
 ];
 
 pub struct ScreenDevice {
@@ -49,15 +49,15 @@ impl ScreenDevice {
         }
     }
 
-    // load the buffer to memory
+    // load the buffer to video memory
     pub fn generate(&mut self, ctx: &Context) {
-    	let mut buffer = self.bg.clone();
+    	let mut buffer = self.fg.clone();
 
-    	for (i, p) in self.fg.pixels.iter().enumerate() {
-    		if *p != Color32::TRANSPARENT {
-    			buffer.pixels[i] = *p;
-    		}
-    	}
+    	// for (i, p) in self.fg.pixels.iter().enumerate() {
+    	// 	if *p != Color32::TRANSPARENT {
+    	// 		buffer.pixels[i] = *p;
+    	// 	}
+    	// }
 
         self.display = Some(ctx.load_texture("buffer", buffer, Default::default()));
     }
