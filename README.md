@@ -2,6 +2,8 @@
 
 uxn virtual machine running inside of a audio plugin
 
+![screenshot of in progress development, showing a memory view and the actual emulator](./pics/progress.png)
+
 *whats inside?*
 
 - a reimplementation of uxn in rust (functional but could really use some structuring) [DONE]
