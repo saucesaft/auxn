@@ -2,6 +2,7 @@
 
 uxn virtual machine running inside of a audio plugin
 
+🚧🚧🚧 very much in progress 🚧🚧🚧
 ![screenshot of in progress development, showing a memory view and the actual emulator](./pics/progress.png)
 
 *whats inside?*
