@@ -172,13 +172,12 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             let layer = uxn.ram[uxn.dev + port] & 0x40;
             let mut addr = uxn.screen.addr;
 
-            // println!("addr: {:#x?}", addr);
-            println!("addr: {:#x?}", &uxn.ram[addr..addr+16]);
+            // println!("addr: {:#x?}", &uxn.ram[addr..addr+16]);
 
             // log::info!("addr {:?}", uxn.ram[addr+13]);
 
             let twobpp = {
-            	if (uxn.ram[uxn.dev + port] & 0x80) != 0 {
+            	if (uxn.dev_get(port) & 0x80) != 0 {
             		1
             	} else {
             		0
@@ -200,7 +199,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             	// println!("i: {}", i);
 
-            	let opaque: u8 = blending[4][(uxn.ram[uxn.dev + port] & 0xf) as usize];
+            	let opaque: u8 = blending[4][(uxn.dev_get(port) & 0xf) as usize];
 
             	// println!("opaque: {}", opaque);
 
@@ -220,14 +219,12 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             		while h >= 0 {
 
-            			// println!("h: {}", h);
-
             			let ch: u8 = ((c & 1) | ((c >> 7) & 2)) as u8;
 
             			if opaque != 0 || ch != 0 {
 
             				let nx = {
-            					if (uxn.ram[uxn.dev + port] & 0x10) != 0 {
+            					if (uxn.dev_get(port) & 0x10) != 0 {
             						(x + dy * i) + (7 - h) as usize
             					} else {
             						(x + dy * i) + h as usize
@@ -235,18 +232,14 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             				};
 
             				let ny = {
-            					if (uxn.ram[uxn.dev + port] & 0x20) != 0 {
-            						(y + dx + i) + (7 - v) as usize
+            					if (uxn.dev_get(port) & 0x20) != 0 {
+            						(y + dx * i) + (7 - v) as usize
             					} else {
-            						(y + dx + i) + v as usize
+            						(y + dx * i) + v as usize
             					}
             				};
 
-            				// let color = uxn.system.get_color(blending[ch as usize][(uxn.ram[uxn.dev + port] & 0xf) as usize]);
-            				
-            				let color = uxn.system.color2;
-
-            				// println!("nx: {} ny: {}", nx, ny);
+            				let color = uxn.system.get_color(blending[ch as usize][(uxn.dev_get(port) & 0xf) as usize]);
 
 				            if 0 <= nx && nx < (uxn.screen.width as usize) {
 				            	if 0 <= ny && ny < (uxn.screen.height as usize) {

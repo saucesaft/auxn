@@ -9,12 +9,7 @@ edition = "2021"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-arrayvec = "0.7.2"
 nih_plug = { git = "https://github.com/robbert-vdh/nih-plug", features = ["assert_process_allocs", "standalone"] }
 nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug" }
 atomic_float = "0.1"
-image = "0.24.5"
-log4rs = "1.2.0"
-log = "0.4.17"
-egui = "0.19.0"
 egui_memory_editor = { git = "https://github.com/Hirtol/egui_memory_editor", rev = "419617c086c677da21780dc9e2c5eb33ddeccb0b" }
