@@ -72,8 +72,11 @@ impl UXN {
     }
 
     pub fn DST_PUSH16(&mut self, s: u16) {
-        self.DST_PUSH8(s.wrapping_shr(0x08) as u8);
-        self.DST_PUSH8((s & 0xff) as u8);
+        let a = (s as i32) >> 0x08;
+        let b = s & 0xff;
+
+        self.DST_PUSH8(a as u8);
+        self.DST_PUSH8(b as u8);
     }
 
     pub fn DST_PUSH8(&mut self, s: u8) {

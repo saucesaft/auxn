@@ -9,7 +9,7 @@ use arrayvec::ArrayVec;
 const MAX_INSTR: u8 = 0x1f;
 
 pub struct UXN {
-    pub ram: ArrayVec<u8, 0x13000>,
+    pub ram: [u8; 0x13000],
 
     pub wst: usize,
     pub rst: usize,
@@ -40,7 +40,8 @@ pub struct UXN {
 impl UXN {
     pub fn new(w: u32, h: u32) -> Self {
         UXN {
-            ram: ArrayVec::<u8, 0x13000>::from([0; 0x13000]),
+            // ram: ArrayVec::<u8, 0x13000>::from([0; 0x13000]),
+            ram: [0; 0x13000],
 
             wst: 0x10000,
             rst: 0x11000,

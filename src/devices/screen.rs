@@ -93,7 +93,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
         // we will handle this accordingly
         // in the pixel or sprite cases
         0x6 => {
-        	println!("addr! {}", val);
+        	// println!("addr! {}", val);
         }
 
         // set x coordinate
@@ -172,6 +172,11 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             let layer = uxn.ram[uxn.dev + port] & 0x40;
             let mut addr = uxn.screen.addr;
 
+            // println!("addr: {:#x?}", addr);
+            println!("addr: {:#x?}", &uxn.ram[addr..addr+16]);
+
+            // log::info!("addr {:?}", uxn.ram[addr+13]);
+
             let twobpp = {
             	if (uxn.ram[uxn.dev + port] & 0x80) != 0 {
             		1
@@ -211,13 +216,13 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             			}
             		};
 
-            		let mut c: u16 = uxn.ram[addr + v] as u16 | ((two as i32) << 8) as u16;
+            		let mut c: u16 = (uxn.ram[addr + v] | ((two as i32) << 8) as u8) as u16;
 
             		while h >= 0 {
 
             			// println!("h: {}", h);
 
-            			let ch: u8 = (c & 1) as u8 | ((c >> 7) & 2) as u8;
+            			let ch: u8 = ((c & 1) | ((c >> 7) & 2)) as u8;
 
             			if opaque != 0 || ch != 0 {
 
@@ -237,7 +242,8 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             					}
             				};
 
-            				// let color = uxn.system.get_color(blending[ch as usize][(uxn.ram[uxn.dev + port] & 0x0f) as usize]);
+            				// let color = uxn.system.get_color(blending[ch as usize][(uxn.ram[uxn.dev + port] & 0xf) as usize]);
+            				
             				let color = uxn.system.color2;
 
             				// println!("nx: {} ny: {}", nx, ny);
@@ -258,7 +264,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             			}
 
-            			h = h - 1;
+            			h =- 1;
             			c = c >> 1;
             		}
 

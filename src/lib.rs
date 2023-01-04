@@ -1,6 +1,10 @@
 use atomic_float::AtomicF32;
+
 use nih_plug::prelude::*;
 use nih_plug_egui::{create_egui_editor, egui, EguiState};
+
+use egui_memory_editor::MemoryEditor;
+
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::{mem, thread, time};
@@ -64,7 +68,7 @@ impl Default for GainParams {
     fn default() -> Self {
         Self {
             // editor_state: EguiState::from_size(WIDTH, HEIGHT),
-            editor_state: EguiState::from_size(600, 600),
+            editor_state: EguiState::from_size(1000, 600),
 
             // See the main gain example for more details
             gain: FloatParam::new(
@@ -123,7 +127,8 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
             
             // demos //
-            let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
+            let rom = include_bytes!("../../uxn/sprite_test.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
             // let rom = include_bytes!("../../uxn/polycat.rom").to_vec();
             // let rom = include_bytes!("../../uxn/dvd.rom").to_vec();
 
@@ -153,14 +158,38 @@ impl Plugin for Gain {
         let params = self.params.clone();
         let peak_meter = self.peak_meter.clone();
 
+        let memory_widget = Mutex::new(
+            MemoryEditor::new().with_address_range("All", 0..0x13000)
+            );
+
+        {
+            let mut mw_setup = memory_widget.lock().unwrap();
+            mw_setup.options.show_ascii = false;
+        }
+
         create_egui_editor(
             self.params.editor_state.clone(),
             (),
             move |_, _| {},
             move |ctx, setter, _state| {
+
                 egui::CentralPanel::default().show(ctx, |ui| {
+
+                    {
+                        let mut cycle = uxn.lock().unwrap();
+                        let mut hex = memory_widget.lock().unwrap();              
+
+                        hex.window_ui_read_only(
+                            ctx,
+                            &mut true,
+                            &mut cycle.ram,
+                            |mem, addr| {
+                                mem[addr].into()
+                            },
+                        );
+                    }
+
                     egui::Window::new("uxn")
-                    .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 20.0))
                     .show(ctx, |ui| {
                         let mut cycle = uxn.lock().unwrap();
 
@@ -169,10 +198,6 @@ impl Plugin for Gain {
                         // return a result
                         // if we have an error, show an specific gui
                         cycle.eval(screen_vector_addr);
-
-                        // if ui.button("resize").clicked() {
-                        //     cycle.screen.resize();
-                        // }
 
                         if cycle.screen.redraw {
                             cycle.screen.generate(ctx);
@@ -185,12 +210,14 @@ impl Plugin for Gain {
 
                     });
 
-                    egui::Window::new("debug")
-                    .anchor(egui::Align2::CENTER_BOTTOM, egui::Vec2::new(0.0, -20.0))
-                    .show(ctx, |ui| {
-                        ctx.texture_ui(ui);
-                    });
+                    // egui::Window::new("debug")
+                    // .anchor(egui::Align2::CENTER_BOTTOM, egui::Vec2::new(0.0, -20.0))
+                    // .show(ctx, |ui| {
+                    //     ctx.texture_ui(ui);
+                    // });
+
                 });
+
             },
         )
     }
@@ -206,6 +233,7 @@ impl Plugin for Gain {
         buffer_config: &BufferConfig,
         _context: &mut impl InitContext<Self>,
     ) -> bool {
+
         // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
         // have dropped by 12 dB
         self.peak_meter_decay_weight = 0.25f64
