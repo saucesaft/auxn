@@ -1,9 +1,12 @@
 [package]
-name = "talsnd"
+name = "auxn"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = ["xtask"]
 
 [lib]
 crate-type = ["cdylib", "lib"]
@@ -11,5 +14,7 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 nih_plug = { git = "https://github.com/robbert-vdh/nih-plug", features = ["assert_process_allocs", "standalone"] }
 nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug" }
+
 atomic_float = "0.1"
+
 egui_memory_editor = { git = "https://github.com/Hirtol/egui_memory_editor", rev = "419617c086c677da21780dc9e2c5eb33ddeccb0b" }

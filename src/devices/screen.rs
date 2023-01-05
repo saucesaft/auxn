@@ -51,32 +51,41 @@ impl ScreenDevice {
 
     // load the buffer to video memory
     pub fn generate(&mut self, ctx: &Context) {
-    	let mut buffer = self.fg.clone();
+    	let mut buffer = self.bg.clone();
 
-    	// for (i, p) in self.fg.pixels.iter().enumerate() {
-    	// 	if *p != Color32::TRANSPARENT {
-    	// 		buffer.pixels[i] = *p;
-    	// 	}
-    	// }
+    	for (i, p) in self.fg.pixels.iter().enumerate() {
+    		if *p != Color32::TRANSPARENT {
+    			buffer.pixels[i] = *p;
+    		}
+    	}
 
         self.display = Some(ctx.load_texture("buffer", buffer, Default::default()));
+        // self.fg = ColorImage::new([self.width as usize, self.height as usize], Color32::TRANSPARENT);
     }
 
-    pub fn pixel(&mut self, x: usize, y: usize, color: Color32, layer: u8) {
+    pub fn pixel(&mut self, x: usize, y: usize, mut color: Color32, layer: u8, bg: Color32) {
         // check that the coordiantes are actually aplicable to our screen
         // if not, we simply ignore them, this is a default behaviour
-        if 0 <= x && x < (self.width as usize) {
-        	if 0 <= y && y < (self.height as usize) {
+        if x < (self.width as usize) {
+        	if y < (self.height as usize) {
+
+        		// if color == bg {
+        		// 	color = Color32::TRANSPARENT;
+        		// }
 
         		 // write to the foreground buffer
         		if layer != 0x00 {
-	            	self.fg[(x, y)] = color;
-	            	self.redraw = true;
+        			if color != self.fg[(x, y)] {
+		            	self.fg[(x, y)] = color;
+		            	self.redraw = true;
+        			}
 
         		 // write to the background buffer
         		} else {
-	            	self.bg[(x, y)] = color;
-	            	self.redraw = true;
+        			if color != self.bg[(x, y)] {
+		            	self.bg[(x, y)] = color;
+		            	self.redraw = true;
+        			}
         		}
 
         	}
@@ -185,7 +194,9 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
             let layer = uxn.ram[uxn.dev + port] & 0x40;
 
-            uxn.screen.pixel(x, y, color, layer);
+            let bg = uxn.system.color0;
+
+            uxn.screen.pixel(x, y, color, layer, bg);
 
             // POKE 16
             if (uxn.dev_get(section + 0x6) & 0x01) != 0 {
@@ -205,6 +216,8 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 			let x = uxn.screen.x as usize;
             let y = uxn.screen.y as usize;
 
+
+            let bg = uxn.system.color0;
             // println!("x: {} y: {}", x, y);
 
             let layer = uxn.ram[uxn.dev + port] & 0x40;
@@ -233,6 +246,7 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             // println!("----------");
 
             if addr > 0x10000 - ((n + 1) << (3 + twobpp)) as usize {
+            	// println!("return");
             	return
             }
 
@@ -263,16 +277,23 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             		let mut c: u16 = (uxn.ram[addr + v] as i32 | ((two as i32) << 8)) as u16;
 
+            		// println!("c: {:?}", c);
+
             		h = 7;
             		while h >= 0 {
 
             			// println!("h: {:?}", h);
 
-            			let ch: u8 = (((c as i32) & 1) | (((c as i32) >> 7) & 2)) as u8;
+            			let ch: u8 = ((c & 1) | ((c >> 7) & 2)) as u8;
 
             			// println!("ch: {:?}", ch);
 
+        				// println!("opaque: {:?} ch: {:?}", opaque, ch);
+        				// println!("----------");
+
             			if opaque != 0 || ch != 0 {
+
+            				// println!("im in");
 
             				let nx = {
             					if (uxn.dev_get(port) & 0x10) != 0 {
@@ -290,14 +311,16 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             					}
             				};
 
+            				// println!("nx: {:?} ny: {:?}", nx, ny);
+
+            				// println!("color: {:?}", blending[ch as usize][(uxn.dev_get(port) & 0xf) as usize]);
+
             				let color = uxn.system.get_color(blending[ch as usize][(uxn.dev_get(port) & 0xf) as usize]);
-
-            				uxn.screen.pixel(nx, ny, color, layer);
-
+            				uxn.screen.pixel(nx, ny, color, layer, bg);
             			}
 
             			h -= 1;
-            			c = ((c as i32) >> 1) as  u16;
+            			c = ((c as i32) >> 1) as u16;
             		}
 
             		v += 1;
@@ -324,6 +347,10 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             uxn.dev_poke(section + 0xa, (y + dy) as u16);
             uxn.screen.y = (y + dy) as u16;
+
+            // println!("addr: {:?}", uxn.screen.addr);
+            // println!("x: {:?}", uxn.screen.x);
+            // println!("y: {:?}", uxn.screen.y);
 
         }
 

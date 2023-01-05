@@ -91,7 +91,7 @@ impl Default for GainParams {
 }
 
 impl Plugin for Gain {
-    const NAME: &'static str = "talsnd";
+    const NAME: &'static str = "auxn";
     const VENDOR: &'static str = "auxsaft";
     const URL: &'static str = "google.com";
     const EMAIL: &'static str = "eduarch42@protonmail.com";
@@ -125,14 +125,16 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../../uxn/pixel.rom").to_vec();
             // let rom = include_bytes!("../../uxn/line.rom").to_vec();
             // let rom = include_bytes!("../../uxn/pixelframe.rom").to_vec();
-            
-            // demos //
             // PASSING
             // let rom = include_bytes!("../../uxn/sprite_test.rom").to_vec();
-            // let rom = include_bytes!("../../uxn/screen.rom").to_vec();
-            let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
+            // PASSING
+            let rom = include_bytes!("../../uxn/screen.rom").to_vec();
+            
+            // demos //
+            // let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
             // let rom = include_bytes!("../../uxn/polycat.rom").to_vec();
             // let rom = include_bytes!("../../uxn/dvd.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/bin/piano.rom").to_vec();
 
             let mut setup = uxn.lock().unwrap();
 

@@ -1,15 +1,18 @@
-# talsnd
+# auxn!
 [![justforfunnoreally.dev badge](https://img.shields.io/badge/justforfunnoreally-dev-9ff)](https://justforfunnoreally.dev)
 
-uxn virtual machine running inside of a audio plugin
+uxn virtual machine running inside of a audio plugin (standalone mode included)
 
-🚧🚧🚧 very much in progress 🚧🚧🚧
+🚧🚧🚧 beware of dragons and messy code 🚧🚧🚧
 ![screenshot of in progress development, showing a memory view and the actual emulator](./pics/progress.png)
 
 *whats inside?*
 
-- a reimplementation of uxn in rust (functional but could really use some structuring) [DONE]
+- a reimplementation of uxn in rust (functional but could really use some structuring)
 - custom-varvara implementation runnning as a vst
+	- console - only supports output
+	- screen - mostly implemented, graphical glitches
+	- audio - none
 
 
 ## tests passed

@@ -35,6 +35,6 @@
 	-[x] Window size changing implemented as an egui window
 		-[ ] Update until baseview supports resizing
 		-[ ] Figure out an approach that could work when resizing after drawing
-			-[ ] Check if this is even supported on the original uxn emulator
+			-[x] Check if this is even supported on the original uxn emulator (it is, e.g. launcher.rom)
 	-[ ] Set-up inputs and outputs directly from egui
 	-[ ] Custom parameters to be used in uxn

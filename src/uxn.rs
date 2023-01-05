@@ -136,55 +136,6 @@ impl UXN {
         }
     }
 
-    // pub fn resize(&mut self) {
-    //     let w = {
-    //         let a = (self.ram[self.dev + 0x22] as i32) << 8;
-    //         let b = (self.ram[self.dev + 0x23] as i32);
-
-    //         (a+b) as usize
-    //     };
-
-    //     let h = {
-    //         let a = (self.ram[self.dev + 0x24] as i32) << 8;
-    //         let b = (self.ram[self.dev + 0x25] as i32);
-
-    //         (a+b) as usize
-    //     };
-
-
-    //     // TODO
-    //     // check approach with a small default buffer
-    //     // and, that will probably cutout the image
-    //     // this will require a new resizing method
-
-    //     // if user did specify sizes
-    //     if w != 0 || h != 0 {
-
-    //         let resized_fg = ColorImage::new([w, h], Color32::TRANSPARENT);
-
-    //         for (i, pixel) in self.screen.fg.pixels.iter.enumerate() {
-
-    //             // new buffer is smaller
-    //             if resized_fg.len() > i {
-    //                 break
-    //             } else {
-    //                 if yes {
-
-    //                 } else {
-    //                     resized_fg[i] = pixel;
-    //                 }
-    //             }
-
-    //             resized_fg[i] = pixel
-    //         }
-
-    //         self.screen.bg = ColorImage::new([w, h], Color32::TRANSPARENT);
-
-    //         self.screen.width = w as u32;
-    //         self.screen.height = h as u32;
-    //     }
-    // }
-
     // move to external?
     fn interrupt(&self) -> u8 {
         return 1;
