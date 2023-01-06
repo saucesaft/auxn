@@ -191,15 +191,14 @@ impl UXN {
             self.halted = true;
         }
 
-        let fresh1 = self.limit;
-        self.limit = self.limit.wrapping_sub(1);
-        if fresh1 == 0 {
+        if self.limit == 0 {
             if self.interrupt() == 0 {
                 self.halted = true;
             } else {
                 self.limit = 0x40000;
             }
         }
+        self.limit = self.limit.wrapping_sub(1);
 
         self.r2 = instr & 0x20 != 0;
         self.rr = instr & 0x40 != 0;
@@ -243,9 +242,9 @@ impl UXN {
                     println!("-> INC - r2: {}", self.r2);
                 }
 
-                let x = self.POP();
+                self.a = self.POP();
 
-                self.PUSH(x.wrapping_add(1).into());
+                self.PUSH(self.a.wrapping_add(1).into());
             }
 
             Ok(Opcode::POP) => {
@@ -373,8 +372,8 @@ impl UXN {
                     println!("-> JMP - r2: {}", self.r2);
                 }
 
-                let x = self.POP().into();
-                pc = self.JUMP(x, pc);
+                self.a = self.POP().into();
+                pc = self.JUMP(self.a.into(), pc);
             }
 
             Ok(Opcode::JCN) => {
@@ -394,8 +393,8 @@ impl UXN {
                 }
 
                 self.DST_PUSH16(pc.try_into().unwrap());
-                let x = self.POP().into();
-                pc = self.JUMP(x, pc);
+                self.a = self.POP().into();
+                pc = self.JUMP(self.a.into(), pc);
             }
 
             Ok(Opcode::STH) => {
@@ -404,11 +403,11 @@ impl UXN {
                 }
 
                 if self.r2 {
-                    let x = self.POP16();
-                    self.DST_PUSH16(x);
+                    self.a = self.POP16();
+                    self.DST_PUSH16(self.a);
                 } else {
-                    let x = self.POP8(); //here
-                    self.DST_PUSH8(x);
+                    self.a = self.POP8().into(); //here
+                    self.DST_PUSH8(self.a.try_into().unwrap());
                 }
             }
 
@@ -417,8 +416,8 @@ impl UXN {
                     println!("-> LDZ - r2: {}", self.r2);
                 }
 
-                let x = self.POP8();
-                self.PUSH(self.PEEK(x.into()));
+                self.a = self.POP8().into();
+                self.PUSH(self.PEEK(self.a.into()));
             }
 
             Ok(Opcode::STZ) => {
@@ -426,10 +425,10 @@ impl UXN {
                     println!("-> STZ - r2: {}", self.r2);
                 }
 
-                let x = self.POP8();
-                let y = self.POP();
+                self.a = self.POP8().into();
+                self.b = self.POP();
 
-                self.POKE(x.into(), y);
+                self.POKE(self.a.into(), self.b);
             }
 
             Ok(Opcode::LDR) => {
@@ -437,9 +436,9 @@ impl UXN {
                     println!("-> LDR - r2: {}", self.r2);
                 }
 
-                let x = self.POP8();
+                self.a = self.POP8().into();
 
-                self.PUSH(self.PEEK(pc.wrapping_add(self.rel(x.into()))));
+                self.PUSH(self.PEEK(pc.wrapping_add(self.rel(self.a.into()))));
             }
 
             Ok(Opcode::STR) => {
@@ -447,10 +446,10 @@ impl UXN {
                     println!("-> STR - r2: {}", self.r2);
                 }
 
-                let x = self.POP8();
-                let y = self.POP();
+                self.a = self.POP8().into();
+                self.b = self.POP();
 
-                self.POKE(pc.wrapping_add(self.rel(x.into())), y);
+                self.POKE(pc.wrapping_add(self.rel(self.a.into())), self.b);
             }
 
             Ok(Opcode::LDA) => {
@@ -458,9 +457,9 @@ impl UXN {
                     println!("-> LDA - r2: {}", self.r2);
                 }
 
-                let x = self.POP16();
+                self.a = self.POP16();
 
-                self.PUSH(self.PEEK(x.into()));
+                self.PUSH(self.PEEK(self.a.into()));
             }
 
             Ok(Opcode::STA) => {
@@ -468,10 +467,10 @@ impl UXN {
                     println!("-> STA - r2: {}", self.r2);
                 }
 
-                let x = self.POP16();
-                let y = self.POP();
+                self.a = self.POP16();
+                self.b = self.POP();
 
-                self.POKE(x.into(), y);
+                self.POKE(self.a.into(), self.b);
             }
 
             Ok(Opcode::DEI) => {
@@ -479,9 +478,9 @@ impl UXN {
                     println!("-> DEI - r2: {}", self.r2);
                 }
 
-                let x = self.POP8();
+                self.a = self.POP8().into();
 
-                self.PUSH(self.DEVR(x.into()).into());
+                self.PUSH(self.DEVR(self.a.into()).into());
             }
 
             Ok(Opcode::DEO) => {
@@ -489,13 +488,13 @@ impl UXN {
                     println!("-> DEO - r2: {}", self.r2);
                 }
 
-                let x = self.POP8();
-                let y = self.POP();
+                self.a = self.POP8().into();
+                self.b = self.POP();
 
                 // println!("DEO VALUE: {:?} - r2: {}", y, self.r2);
                 // println!("------------------");
 
-                self.DEVW(x.into(), y);
+                self.DEVW(self.a.into(), self.b);
             }
 
             Ok(Opcode::ADD) => {

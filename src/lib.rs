@@ -119,7 +119,7 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../tests/jumps.rom").to_vec();
             // let rom = include_bytes!("../tests/memory.rom").to_vec();
             // let rom = include_bytes!("../tests/stack.rom").to_vec();
-            // let rom = include_bytes!("../tests.rom").to_vec();
+            let rom = include_bytes!("../tests.rom").to_vec();
 
             // video related //
             // let rom = include_bytes!("../../uxn/pixel.rom").to_vec();
@@ -131,7 +131,7 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../../uxn/screen.rom").to_vec();
             
             // demos //
-            let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
             // let rom = include_bytes!("../../uxn/polycat.rom").to_vec();
             // let rom = include_bytes!("../../uxn/dvd.rom").to_vec();
             // let rom = include_bytes!("../../uxn/bin/piano.rom").to_vec();
@@ -149,10 +149,6 @@ impl Plugin for Gain {
             // that will change when the start is ready but let the app
             // advance into the gui and show that it is booting up
             setup.eval(0x100);
-
-            // we set the new texture size, depending
-            // if yes or not the user configured a custom size
-            // setup.resize();
 
             // we also asume the user did define the system colors
             // so we set the background color here

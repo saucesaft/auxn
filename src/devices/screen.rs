@@ -10,20 +10,28 @@ static blending: [[u8; 16]; 5] = [
 ];
 
 pub struct ScreenDevice {
+    // width and height of the device
     pub width: u32,
     pub height: u32,
 
-    x: u16,
-    y: u16,
-
+    // both background and foreground buffers
     pub fg: ColorImage,
     pub bg: ColorImage,
 
+    // the actual texture stored on the GPU
     pub display: Option<TextureHandle>,
 
+    // address of the vector
     pub vector: usize,
+    
+    // address in memory of the sprite to draw
     pub addr: usize,
 
+    // coords of the next pixel to write
+    x: u16,
+    y: u16,
+
+    // this boolean is true when we need to update
     pub redraw: bool,
 
     // system colors
@@ -109,22 +117,25 @@ impl ScreenDevice {
                 if opaque != 0 || ch != 0 {
                     let nx = {
                         if flipx != 0 {
-                            (x + (7 - h) as u16) as usize
+                            (x + (7 - h) as u16)
                         } else {
-                            (x + (h as u16)) as usize
+                            // println!("{:?} + {:?}", x, h);
+                            // println!("----------");
+
+                            (x + (h as u16))
                         }
                     };
 
                     let ny = {
                         if flipy != 0 {
-                            (y + (7 - v) as u16) as usize
+                            (y + (7 - v) as u16)
                         } else {
-                            (y + v) as usize
+                            (y + v)
                         }
                     };
 
                     let pcolor = self.get_color(blending[ch as usize][color]);
-                    self.screen_write(nx, ny, pcolor, layer);
+                    self.screen_write(nx as usize, ny as usize, pcolor, layer);
                 }
 
                 h -= 1;
@@ -283,9 +294,9 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
         }
 
         0xf => {
-        	let mut i: usize = 0;
-			let x = uxn.screen.x as usize;
-            let y = uxn.screen.y as usize;
+        	let mut i = 0;
+			let x = uxn.screen.x;
+            let y = uxn.screen.y;
             let color = (uxn.dev_get(port) & 0xf) as usize;
 
             let layer = uxn.ram[uxn.dev + port] & 0x40;
@@ -299,11 +310,11 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             	}
             };
 
-            // println!("twobpp: {:?}", twobpp);
+            // println!("x: {:?} y {:?}", x, y);
 
-            let n = (uxn.dev_get(section + 0x6) >> 4) as usize;
-            let dx = ((uxn.dev_get(section + 0x6) & 0x01) << 3) as usize;
-            let dy = ((uxn.dev_get(section + 0x6) & 0x02) << 2) as usize;
+            let n = (uxn.dev_get(section + 0x6) >> 4);
+            let dx = ((uxn.dev_get(section + 0x6) & 0x01) << 3);
+            let dy = ((uxn.dev_get(section + 0x6) & 0x02) << 2);
 
             if sprite_addr > 0x10000 - ((n + 1) << (3 + twobpp)) as usize {
             	return
@@ -311,8 +322,16 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             while i <= n {
 
-                let sprite_x: u16 = (x + dy * i) as u16;
-                let sprite_y: u16 = (y + dx * i) as u16;
+                // println!("x: {:?} dy*i: {:?}", x, u16::from(dy * i));
+
+                let sprite_x: u16 = x + u16::from(dy * i);
+                // let sprite_x: u16 = x;
+
+                // println!("sprite_x: {:?}", sprite_x);
+                // println!("sprite_x: {:?}", x + u16::from(dy * i));
+                // println!("----------");
+
+                let sprite_y: u16 = y + u16::from(dx * i);
                 let flipx = (uxn.dev_get(port) & 0x10);
                 let flipy = (uxn.dev_get(port) & 0x20);
 
@@ -330,11 +349,11 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             uxn.dev_poke(section + 0xc, sprite_addr as u16);
             uxn.screen.addr = sprite_addr;
 
-            uxn.dev_poke(section + 0x8, (x + dx) as u16);
-            uxn.screen.x = (x + dx) as u16;
+            uxn.dev_poke(section + 0x8, x + u16::from(dx));
+            uxn.screen.x = x + u16::from(dx);
 
-            uxn.dev_poke(section + 0xa, (y + dy) as u16);
-            uxn.screen.y = (y + dy) as u16;
+            uxn.dev_poke(section + 0xa, y + u16::from(dy));
+            uxn.screen.y = y + u16::from(dy);
         }
 
         _ => {
