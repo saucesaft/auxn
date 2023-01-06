@@ -25,6 +25,12 @@ pub struct ScreenDevice {
     pub addr: usize,
 
     pub redraw: bool,
+
+    // system colors
+    pub color0: Color32,
+    pub color1: Color32,
+    pub color2: Color32,
+    pub color3: Color32,
 }
 
 impl ScreenDevice {
@@ -46,6 +52,21 @@ impl ScreenDevice {
             addr: 0,
 
             redraw: false,
+
+            color0: Color32::BLACK,
+            color1: Color32::DARK_GRAY,
+            color2: Color32::LIGHT_GRAY,
+            color3: Color32::WHITE,
+        }
+    }
+
+    pub fn get_color(&self, index: u8) -> Color32 {
+        match index {
+            0 => self.color0,
+            1 => self.color1,
+            2 => self.color2,
+            3 => self.color3,
+            _ => Color32::TRANSPARENT,
         }
     }
 
@@ -53,28 +74,80 @@ impl ScreenDevice {
     pub fn generate(&mut self, ctx: &Context) {
     	let mut buffer = self.bg.clone();
 
+        // "mix" both buffers into one, but only temporarly
     	for (i, p) in self.fg.pixels.iter().enumerate() {
     		if *p != Color32::TRANSPARENT {
     			buffer.pixels[i] = *p;
     		}
     	}
 
+        // upload that buffer as a texture to the GPU
         self.display = Some(ctx.load_texture("buffer", buffer, Default::default()));
-        // self.fg = ColorImage::new([self.width as usize, self.height as usize], Color32::TRANSPARENT);
     }
 
-    pub fn pixel(&mut self, x: usize, y: usize, mut color: Color32, layer: u8, bg: Color32) {
+    pub fn screen_blit(&mut self, layer: u8, x: u16, y: u16, sprite: &[u8], color: usize, flipx: u8, flipy: u8, twobpp: u8, opaque: u8) {
+        let mut v: u16 = 0;
+        let mut h: i8 = 7;
+
+        while v < 8 {
+
+            let two = {
+                if twobpp == 1 {
+                    sprite[(v + 8) as usize]
+                } else {
+                    0
+                }
+            };
+
+            let mut c: u16 = (sprite[v as usize] as i32 | (two as i32) << 8) as u16;
+
+            h = 7;
+            while h >= 0 {
+
+                let ch: u8 = ((c & 1) | ((c >> 7) & 2)) as u8;
+
+                if opaque != 0 || ch != 0 {
+                    let nx = {
+                        if flipx != 0 {
+                            (x + (7 - h) as u16) as usize
+                        } else {
+                            (x + (h as u16)) as usize
+                        }
+                    };
+
+                    let ny = {
+                        if flipy != 0 {
+                            (y + (7 - v) as u16) as usize
+                        } else {
+                            (y + v) as usize
+                        }
+                    };
+
+                    let pcolor = self.get_color(blending[ch as usize][color]);
+                    self.screen_write(nx, ny, pcolor, layer);
+                }
+
+                h -= 1;
+                c = ((c as i32) >> 1) as u16;
+            }
+
+            v += 1;
+        }
+    }
+
+    pub fn screen_write(&mut self, x: usize, y: usize, mut color: Color32, layer: u8) {
         // check that the coordiantes are actually aplicable to our screen
         // if not, we simply ignore them, this is a default behaviour
         if x < (self.width as usize) {
         	if y < (self.height as usize) {
 
-        		// if color == bg {
-        		// 	color = Color32::TRANSPARENT;
-        		// }
-
         		 // write to the foreground buffer
         		if layer != 0x00 {
+                    // simulate alpha blending
+                    if color == self.color0 {
+                        color = Color32::TRANSPARENT;
+                    }
+
         			if color != self.fg[(x, y)] {
 		            	self.fg[(x, y)] = color;
 		            	self.redraw = true;
@@ -191,12 +264,10 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
         0xe => {
             let x = uxn.screen.x as usize;
             let y = uxn.screen.y as usize;
-            let color = uxn.system.get_color(uxn.ram[uxn.dev + port] & 0x3);
+            let color = uxn.screen.get_color(uxn.ram[uxn.dev + port] & 0x3);
             let layer = uxn.ram[uxn.dev + port] & 0x40;
 
-            let bg = uxn.system.color0;
-
-            uxn.screen.pixel(x, y, color, layer, bg);
+            uxn.screen.screen_write(x, y, color, layer);
 
             // POKE 16
             if (uxn.dev_get(section + 0x6) & 0x01) != 0 {
@@ -215,16 +286,10 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
         	let mut i: usize = 0;
 			let x = uxn.screen.x as usize;
             let y = uxn.screen.y as usize;
-
-
-            let bg = uxn.system.color0;
-            // println!("x: {} y: {}", x, y);
+            let color = (uxn.dev_get(port) & 0xf) as usize;
 
             let layer = uxn.ram[uxn.dev + port] & 0x40;
-            let mut addr = uxn.screen.addr;
-
-            // println!("addr: {:#x?}", addr);
-            // log::info!("addr {:?}", uxn.ram[addr+13]);
+            let mut sprite_addr = uxn.screen.addr;
 
             let twobpp = {
             	if (uxn.dev_get(port) & 0x80) != 0 {
@@ -240,118 +305,36 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             let dx = ((uxn.dev_get(section + 0x6) & 0x01) << 3) as usize;
             let dy = ((uxn.dev_get(section + 0x6) & 0x02) << 2) as usize;
 
-            // println!("n: {:?}", n);
-            // println!("dx: {:?}", dx);
-            // println!("dy: {:?}", dy);
-            // println!("----------");
-
-            if addr > 0x10000 - ((n + 1) << (3 + twobpp)) as usize {
-            	// println!("return");
+            if sprite_addr > 0x10000 - ((n + 1) << (3 + twobpp)) as usize {
             	return
             }
 
             while i <= n {
 
-            	let mut v = 0;
-            	let mut h: i8 = 7;
+                let sprite_x: u16 = (x + dy * i) as u16;
+                let sprite_y: u16 = (y + dx * i) as u16;
+                let flipx = (uxn.dev_get(port) & 0x10);
+                let flipy = (uxn.dev_get(port) & 0x20);
 
-            	// println!("i: {}", i);
+                let opaque: u8 = blending[4][color];
 
-            	let opaque: u8 = blending[4][(uxn.dev_get(port) & 0xf) as usize];
+                let sprite: &[u8] = &uxn.ram[sprite_addr..];
 
-            	// println!("opaque: {:?}", opaque);
+                uxn.screen.screen_blit(layer, sprite_x, sprite_y, sprite, color, flipx, flipy, twobpp, opaque);
 
-            	while v < 8 {
-
-            		// println!("v: {:?}", v);
-
-            		let two = {
-            			if twobpp == 1 {
-            				uxn.ram[addr + v + 8]
-            			} else {
-            				0
-            			}
-            		};
-
-            		// println!("two: {:?}", two);
-
-            		let mut c: u16 = (uxn.ram[addr + v] as i32 | ((two as i32) << 8)) as u16;
-
-            		// println!("c: {:?}", c);
-
-            		h = 7;
-            		while h >= 0 {
-
-            			// println!("h: {:?}", h);
-
-            			let ch: u8 = ((c & 1) | ((c >> 7) & 2)) as u8;
-
-            			// println!("ch: {:?}", ch);
-
-        				// println!("opaque: {:?} ch: {:?}", opaque, ch);
-        				// println!("----------");
-
-            			if opaque != 0 || ch != 0 {
-
-            				// println!("im in");
-
-            				let nx = {
-            					if (uxn.dev_get(port) & 0x10) != 0 {
-            						(x + dy * i) + (7 - h) as usize
-            					} else {
-            						(x + dy * i) + (h) as usize
-            					}
-            				};
-
-            				let ny = {
-            					if (uxn.dev_get(port) & 0x20) != 0 {
-            						(y + dx * i) + (7 - v) as usize
-            					} else {
-            						(y + dx * i) + (v) as usize
-            					}
-            				};
-
-            				// println!("nx: {:?} ny: {:?}", nx, ny);
-
-            				// println!("color: {:?}", blending[ch as usize][(uxn.dev_get(port) & 0xf) as usize]);
-
-            				let color = uxn.system.get_color(blending[ch as usize][(uxn.dev_get(port) & 0xf) as usize]);
-            				uxn.screen.pixel(nx, ny, color, layer, bg);
-            			}
-
-            			h -= 1;
-            			c = ((c as i32) >> 1) as u16;
-            		}
-
-            		v += 1;
-            	}
-
-            	addr += ((uxn.dev_get(section + 0x6) & 0x4) << (1 + twobpp)) as usize;
-
-            	// println!("addr: {:?}", addr);
-            	// println!("first: {:?} twobpp: {:?}", (uxn.dev_get(section + 0x6) & 0x4), twobpp);
-            	// println!("second {:?}", (((uxn.dev_get(section + 0x6) & 0x4) as i32) << (1 + twobpp) as i32));
+            	sprite_addr += ((uxn.dev_get(section + 0x6) & 0x4) << (1 + twobpp)) as usize;
 
             	i += 1;
             }
 
-            // println!("addr: {:?}", addr);
-            // println!("addr: {:?}", addr as u16);
-            // println!("----");
-
-            uxn.dev_poke(section + 0xc, addr as u16);
-            uxn.screen.addr = addr;
+            uxn.dev_poke(section + 0xc, sprite_addr as u16);
+            uxn.screen.addr = sprite_addr;
 
             uxn.dev_poke(section + 0x8, (x + dx) as u16);
             uxn.screen.x = (x + dx) as u16;
 
             uxn.dev_poke(section + 0xa, (y + dy) as u16);
             uxn.screen.y = (y + dy) as u16;
-
-            // println!("addr: {:?}", uxn.screen.addr);
-            // println!("x: {:?}", uxn.screen.x);
-            // println!("y: {:?}", uxn.screen.y);
-
         }
 
         _ => {

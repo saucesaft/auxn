@@ -128,10 +128,10 @@ impl Plugin for Gain {
             // PASSING
             // let rom = include_bytes!("../../uxn/sprite_test.rom").to_vec();
             // PASSING
-            let rom = include_bytes!("../../uxn/screen.rom").to_vec();
+            // let rom = include_bytes!("../../uxn/screen.rom").to_vec();
             
             // demos //
-            // let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
+            let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
             // let rom = include_bytes!("../../uxn/polycat.rom").to_vec();
             // let rom = include_bytes!("../../uxn/dvd.rom").to_vec();
             // let rom = include_bytes!("../../uxn/bin/piano.rom").to_vec();

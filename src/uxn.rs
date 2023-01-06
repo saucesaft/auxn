@@ -131,7 +131,7 @@ impl UXN {
     pub fn bg_color(&mut self) {
         for p in &mut self.screen.bg.pixels {
             if *p == Color32::TRANSPARENT {
-                *p = self.system.color0;
+                *p = self.screen.color0;
             }
         }
     }
