@@ -29,6 +29,8 @@ impl UXN {
 
             0x20 => crate::devices::screen(self, port, val),
 
+            0x90 => crate::devices::mouse(self, port, val),
+
             _ => println!("Unknown DEV PORT: {:x?}", port & 0xF0),
         }
     }

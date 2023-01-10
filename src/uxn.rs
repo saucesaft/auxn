@@ -33,6 +33,7 @@ pub struct UXN {
     pub system: SystemDevice,
     pub console: ConsoleDevice,
     pub screen: ScreenDevice,
+    pub mouse: MouseDevice,
 }
 
 impl UXN {
@@ -65,6 +66,7 @@ impl UXN {
             system: SystemDevice::new(),
             console: ConsoleDevice::new(),
             screen: ScreenDevice::new(w, h),
+            mouse: MouseDevice::new(),
         }
     }
 
@@ -126,6 +128,10 @@ impl UXN {
             self.ram[self.src + 0xff] = self.ram[self.src + 0xff] - 1;
             return (self.ram[self.src + 0xff]).into();
         }
+    }
+
+    pub fn clamp(&self, val: u16, min: u16, max: u16) -> u16 {
+        if val >= min { if val <= max { val } else { max } } else { min }
     }
 
     pub fn bg_color(&mut self) {
@@ -230,8 +236,6 @@ impl UXN {
                 if debug {
                     println!("-> LIT - r2: {}", self.r2);
                 }
-
-                // println!("ppek: {:?}", self.PEEK(pc));
 
                 self.PUSH(self.PEEK(pc));
                 pc = pc + (1 + self.bs);

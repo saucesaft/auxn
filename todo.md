@@ -6,24 +6,24 @@
 	- [x] memory.rom
 	- [x] stack.rom
 	- [x] tests.rom
--[ ] Video
+-[x] Video
 	-[x] Vector
-	-[ ] Sprites
-	-[ ] Auto mode
+	-[x] Sprites
+	-[x] Auto mode
 	-[x] Effects and blending
 	-[x] Handle bg and fg properly
 	-[x] Set background color at first
 -[ ] Clean Up
 	-[ ] Refactor stacks into their own classes
 	-[ ] Resolve warnings
-		- [ ] Unused dependencies
+		- [x] Unused dependencies
 		- [ ] UPPERCASE FUNCTIONS
 -[ ] Mouse
 -[ ] Controller
 -[ ] Audio
 -[ ] Midi
 -[ ] QOL
-	-[ ] Change name and logo
+	-[x] Change name and logo
 	-[ ] Hide debug menu for final release
 		-[ ] Maybe only maintain it in standalone mode
 		-[ ] Debug mode inspired by https://github.com/randrew/uxn32

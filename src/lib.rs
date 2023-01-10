@@ -3,6 +3,9 @@ use atomic_float::AtomicF32;
 use nih_plug::prelude::*;
 use nih_plug_egui::{create_egui_editor, egui, EguiState};
 
+use nih_plug_egui::egui::output::CursorIcon;
+use nih_plug_egui::egui::Widget;
+
 use egui_memory_editor::MemoryEditor;
 
 use std::sync::mpsc;
@@ -119,7 +122,7 @@ impl Plugin for Gain {
             // let rom = include_bytes!("../tests/jumps.rom").to_vec();
             // let rom = include_bytes!("../tests/memory.rom").to_vec();
             // let rom = include_bytes!("../tests/stack.rom").to_vec();
-            let rom = include_bytes!("../tests.rom").to_vec();
+            // let rom = include_bytes!("../tests.rom").to_vec();
 
             // video related //
             // let rom = include_bytes!("../../uxn/pixel.rom").to_vec();
@@ -130,6 +133,10 @@ impl Plugin for Gain {
             // PASSING
             // let rom = include_bytes!("../../uxn/screen.rom").to_vec();
             
+            // input related //
+            let rom = include_bytes!("../../uxn/mouse.rom").to_vec();
+
+
             // demos //
             // let rom = include_bytes!("../../uxn/amiga.rom").to_vec();
             // let rom = include_bytes!("../../uxn/polycat.rom").to_vec();
@@ -152,6 +159,8 @@ impl Plugin for Gain {
 
             // we also asume the user did define the system colors
             // so we set the background color here
+            // TODO make this a runtime thing,
+            // so that we can change colors on the fly
             setup.bg_color();
         }
 
@@ -196,7 +205,7 @@ impl Plugin for Gain {
                     let screen_vector_addr = cycle.screen.vector();
 
                     // return a result
-                    // if we have an error, show an specific gui
+                    // if we have an error, show a notification
                     cycle.eval(screen_vector_addr);
 
                     if cycle.screen.redraw {
@@ -207,13 +216,57 @@ impl Plugin for Gain {
                     egui::Window::new("screen")
                     .show(ctx, |ui| {
                         let texture = cycle.screen.display.as_ref().expect("No Texture Loaded");
-                        ui.image(texture, texture.size_vec2());
+
+                        // let im = egui::Image::new(texture, texture.size_vec2())
+                        // .sense(
+                        //     egui::Sense {
+                        //         click: false,
+                        //         drag: true,
+                        //         focussable: false,
+                        //     }
+                        // ).ui(ui);
+
+                        let im = ui.image(texture, texture.size_vec2());
+
+                        let pos = ctx.input().pointer.hover_pos().unwrap_or_default();
+                        if im.rect.contains(pos) {
+                            ui.output().cursor_icon = CursorIcon::Grab;
+
+                            if ctx.input().pointer.is_moving() {
+                                let min = im.rect.min;
+                                let max = im.rect.max;
+
+                                // clamp coordinates taking into account
+                                // - uxn on a egui window
+                                // - to the size of the actual uxn window
+                                let mut x = if pos.x >= min.x { if pos.x <= max.x { pos.x } else { max.x } } else { min.x };
+                                let mut y = if pos.y >= min.y { if pos.y <= max.y { pos.y } else { max.y } } else { min.y };
+
+                                // poke mouse coords
+                                crate::devices::mouse_pos(&mut cycle, x - min.x, y - min.y);
+                            }
+
+                            if ctx.input().pointer.any_pressed() {
+                                // poke pressed mouse btn
+                                crate::devices::mouse_down(&mut cycle);
+                            }
+
+                            if ctx.input().pointer.any_released() {
+                                // poke released mouse btn
+                                crate::devices::mouse_up(&mut cycle);
+                            }          
+                        } else {
+                            ui.output().cursor_icon = CursorIcon::Crosshair;
+                        }
+
+                        // if ctx.is_pointer_over_area() {}
+
                     });
 
-                    egui::Window::new("debug")
-                    .show(ctx, |ui| {
-                        ctx.texture_ui(ui);
-                    });
+                    // egui::Window::new("debug")
+                    // .show(ctx, |ui| {
+                    //     ctx.texture_ui(ui);
+                    // });
 
                 });
 

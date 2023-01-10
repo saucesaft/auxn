@@ -117,20 +117,17 @@ impl ScreenDevice {
                 if opaque != 0 || ch != 0 {
                     let nx = {
                         if flipx != 0 {
-                            (x + (7 - h) as u16)
+                            x.wrapping_add(7_u16.wrapping_sub(h as u16))
                         } else {
-                            // println!("{:?} + {:?}", x, h);
-                            // println!("----------");
-
-                            (x + (h as u16))
+                            x.wrapping_add(h as u16)
                         }
                     };
 
                     let ny = {
                         if flipy != 0 {
-                            (y + (7 - v) as u16)
+                            y.wrapping_add(7_u16.wrapping_sub(v as u16))
                         } else {
-                            (y + v)
+                            y.wrapping_add(v as u16)
                         }
                     };
 
@@ -280,15 +277,15 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
             uxn.screen.screen_write(x, y, color, layer);
 
-            // POKE 16
             if (uxn.dev_get(section + 0x6) & 0x01) != 0 {
-            	uxn.ram[uxn.dev + (section + 0x8)] = (x + 1) as u8;
+                uxn.dev_poke(section + 0x8, (x + 1) as u16);
+                uxn.screen.x = (x + 1) as u16;
             	println!("auto x+1");
             }
 
-            // POKE 16
             if (uxn.dev_get(section + 0x6) & 0x02) != 0 {
-            	uxn.ram[uxn.dev + (section + 0xa)] = (y + 1) as u8;
+                uxn.dev_poke(section + 0xa, (y + 1) as u16);
+                uxn.screen.y = (y + 1) as u16;
             	println!("auto y+1");
             }
         }
@@ -310,11 +307,21 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             	}
             };
 
-            // println!("x: {:?} y {:?}", x, y);
+            let n: u16 = (uxn.dev_get(section + 0x6) >> 4).into();
+            let dx: u16 = ((uxn.dev_get(section + 0x6) & 0x1) << 3).into();
+            let dy: u16 = ((uxn.dev_get(section + 0x6) & 0x2) << 2).into();
 
-            let n = (uxn.dev_get(section + 0x6) >> 4);
-            let dx = ((uxn.dev_get(section + 0x6) & 0x01) << 3);
-            let dy = ((uxn.dev_get(section + 0x6) & 0x02) << 2);
+            // println!("n: {:?}", uxn.dev_get(section + 0x6) >> 4);
+            // println!("n: {:?}", (uxn.dev_get(section + 0x6) >> 4) as u16);
+            // println!("---------------");
+
+            // println!("n: {:?}", (uxn.dev_get(section + 0x6) & 0x01) << 3);
+            // println!("n: {:?}", dx);
+            // println!("---------------");
+
+            // println!("n: {:?}", (uxn.dev_get(section + 0x6) & 0x2) << 2);
+            // println!("n: {:?}", dy);
+            // println!("---------------");
 
             if sprite_addr > 0x10000 - ((n + 1) << (3 + twobpp)) as usize {
             	return
@@ -324,14 +331,9 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
 
                 // println!("x: {:?} dy*i: {:?}", x, u16::from(dy * i));
 
-                let sprite_x: u16 = x + u16::from(dy * i);
-                // let sprite_x: u16 = x;
+                let sprite_x: u16 = x.wrapping_add( dy.wrapping_mul(i) ) as u16;
+                let sprite_y: u16 = y.wrapping_add( dx.wrapping_mul(i) ) as u16;
 
-                // println!("sprite_x: {:?}", sprite_x);
-                // println!("sprite_x: {:?}", x + u16::from(dy * i));
-                // println!("----------");
-
-                let sprite_y: u16 = y + u16::from(dx * i);
                 let flipx = (uxn.dev_get(port) & 0x10);
                 let flipy = (uxn.dev_get(port) & 0x20);
 
@@ -352,8 +354,8 @@ pub fn screen(uxn: &mut UXN, port: usize, val: u8) {
             uxn.dev_poke(section + 0x8, x + u16::from(dx));
             uxn.screen.x = x + u16::from(dx);
 
-            uxn.dev_poke(section + 0xa, y + u16::from(dy));
-            uxn.screen.y = y + u16::from(dy);
+            uxn.dev_poke(section + 0xa, ((y as i32) + (dy as i32)) as u16 );
+            uxn.screen.y = ((y as i32) + (dy as i32)) as u16;
         }
 
         _ => {
